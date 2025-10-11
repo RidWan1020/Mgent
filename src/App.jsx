@@ -8,7 +8,7 @@ import Admin from "./pages/admin";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 
-import "../src/Assets/input.css";
+import "../src/assets/input.css";
 
 export default function App() {
   const { user, role } = useAuth();

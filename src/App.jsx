@@ -6,7 +6,7 @@ import { NotificationProvider } from "../Context/NotificationContext";
 import User from "./pages/user";
 import Admin from "./pages/admin";
 import NotFound from "./pages/NotFound";
-import Login from "./Pages/Login";
+import Login from "./pages/Login";
 
 import "../src/Assets/input.css";
 

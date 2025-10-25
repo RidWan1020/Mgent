@@ -1,9 +1,8 @@
-import SecondaryButton from "../Components/SecondaryButton";
+import SecondaryButton from "@Components/SecondaryButton";
 
-// Firebase
 import { signOut } from "firebase/auth";
-import { auth } from "../../Config/firebase";
-import { useAuth } from "../../Context/AuthContext";
+import { auth } from "@Configs/firebase";
+import { useAuth } from "@Context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 export default function Header({ Logo }) {
@@ -28,7 +27,7 @@ export default function Header({ Logo }) {
         <div className="flex gap-1.5 items-center bg-[#061227] border border-[#2c4466] text-[#93c5fd] p-3 rounded-lg text-sm">
           {name || "Username"}
         </div>
-        <SecondaryButton text="লগ আউট" onClick={handleLogout} />
+        <SecondaryButton text="লগ-আউট" onClick={handleLogout} />
       </div>
     </header>
   );

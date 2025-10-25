@@ -1,14 +1,14 @@
+import "@assets/input.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "../Context/AuthContext";
-import { NotificationProvider } from "../Context/NotificationContext";
+import { useAuth } from "./Context/AuthContext";
+import { NotificationProvider } from "./Context/NotificationContext";
 
 // Pages
-import User from "./pages/user";
-import Admin from "./pages/admin";
-import NotFound from "./pages/NotFound";
+import User from "./Pages/user";
+import Admin from "./Pages/admin";
+import NotFound from "./Pages/NotFound";
 import Login from "./Pages/Login";
 
-import "../src/Assets/input.css";
 
 export default function App() {
   const { user, role } = useAuth();
@@ -24,7 +24,7 @@ export default function App() {
           <Route
             path="/admin"
             element={
-              user && role === "Admin" ? <Admin /> : <Navigate to="/login" />
+              user && role === "admin" ? <Admin /> : <Navigate to="/login" />
             }
           />
           <Route

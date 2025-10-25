@@ -1,7 +1,8 @@
-import Heading from "../../Components/Heading";
-import PrimaryButton from "../../Components/PrimaryButton";
-import SelectInput from "../../Components/SelectInput";
-import NumberInputField from "../../Components/NumberInputField";
+import Heading from "@Components/Heading";
+import PrimaryButton from "@Components/PrimaryButton";
+import SecondaryButton from "@Components/SecondaryButton";
+import SelectInput from "@Components/SelectInput";
+import NumberInputField from "@Components/NumberInputField";
 
 import { useEffect, useState } from "react";
 import {
@@ -13,19 +14,18 @@ import {
   serverTimestamp,
   onSnapshot,
 } from "firebase/firestore";
-import { db } from "../../../Config/firebase";
-import { useNotification } from "../../../Context/NotificationContext";
+import { db } from "@Configs/firebase";
+import { useNotification } from "@Context/NotificationContext";
 
 export default function UserItemPricing() {
   const [users, setUsers] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedUser, setSelectedUser] = useState("");
   const [selectedItem, setSelectedItem] = useState("");
-  const [price, setPrice] = useState("");
+  const [price, setPrice] = useState(0);
   const { notifySuccess, notifyError } = useNotification();
 
   useEffect(() => {
-    // users snapshot
     const usersCol = collection(db, "users");
     const unsubUsers = onSnapshot(
       usersCol,
@@ -65,7 +65,7 @@ export default function UserItemPricing() {
   const handleApply = async (e) => {
     e.preventDefault();
     if (!selectedUser || !selectedItem) {
-      notifyError("প্রথমে ইউজার এবং আইটেম সিলেক্ট করুন");
+      notifyError("প্রথমে ব্যবহারকারী এবং পণ্য সিলেক্ট করুন");
       return;
     }
     const priceNum = Number(price);
@@ -85,13 +85,20 @@ export default function UserItemPricing() {
       { merge: true }
     );
 
-    notifySuccess("User price updated");
-    setPrice("");
+    notifySuccess("মূল্য সফলভাবে পরিবর্তন করা হয়েছে");
+    setPrice(0);
+  };
+
+  const clearForm = () => {
+    setSelectedUser("");
+    setSelectedItem("");
+    setPrice(0);
+    notifySuccess("ফর্ম ক্লিয়ার করা হয়েছে");
   };
 
   return (
     <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="👥 ইউজার প্রাইসিং" />
+      <Heading text="👥 ব্যবহারকারীভিত্তিক মূল্য" />
       <form onSubmit={handleApply}>
         <div className="flex flex-col gap-4 p-3">
           <SelectInput
@@ -103,21 +110,24 @@ export default function UserItemPricing() {
             onChange={(e) => setSelectedUser(e.target.value)}
           />
           <SelectInput
-            label="আইটেম নির্বাচন"
+            label="পণ্য নির্বাচন"
             id="itemSelect"
             value={selectedItem}
-            placeholder="আইটেম নির্বাচন করুন"
+            placeholder="পণ্য নির্বাচন করুন"
             options={products}
             onChange={(e) => setSelectedItem(e.target.value)}
           />
           <NumberInputField
-            label="এই ইউজারের জন্য বিক্রয় মূল্য (৳)"
+            label="এই ব্যবহারকারীর জন্য বিক্রয়মূল্য"
             id="userPrice"
             min={1}
             value={price}
             onChange={(e) => setPrice(e.target.value)}
           />
-          <PrimaryButton type="submit" text="আপডেট প্রাইজ" />
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <PrimaryButton type="submit" text="মূল্য আপডেট করুন" />
+            <SecondaryButton text="ক্লিয়ার" onClick={clearForm} />
+          </div>
         </div>
       </form>
     </section>

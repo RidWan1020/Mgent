@@ -1,25 +1,24 @@
 import { useLocation } from "react-router-dom";
-import { useAuth } from "../../Context/AuthContext";
+import { useAuth } from "@Context/AuthContext";
 import { doc, getDoc, deleteDoc, updateDoc } from "firebase/firestore";
-import { db } from "../../Config/firebase";
+import { db } from "@Configs/firebase";
 import { useState, useEffect } from "react";
-import { addToCart } from "../../utils/cart";
+import { addToCart } from "@Utils/cart";
+import { useNotification } from "@Context/NotificationContext";
 
-import PrimaryButton from "../Components/PrimaryButton";
-import SecondaryButton from "../Components/SecondaryButton";
-import Inputfield from "../Components/InputField";
-import NumberInputField from "../Components/NumberInputField";
-import SelectInput from "../Components/SelectInput";
-
-import { useNotification } from "../../Context/NotificationContext";
+import PrimaryButton from "@Components/PrimaryButton";
+import SecondaryButton from "@Components/SecondaryButton";
+import Inputfield from "@Components/InputField";
+import NumberInputField from "@Components/NumberInputField";
+import SelectInput from "@Components/SelectInput";
 
 const FIELDS = {
   NAME: "নাম",
   SKU: "SKU",
   IMAGE: "ছবি",
-  BOXES: "বক্স", // total boxes
-  CARTONS: "কার্টুন", // total cartons
-  BOX_PER_CARTON: "কার্টুনে বক্স", // conversion factor
+  BOXES: "বক্স",
+  CARTONS: "কার্টন",
+  BOX_PER_CARTON: "কার্টনে বক্স",
   PUR_PRICE: "ক্রয়মূল্য",
   SELL_PRICE: "বিক্রয়মূল্য",
 };
@@ -73,40 +72,34 @@ export default function Products({ product }) {
 
   const handleAddToCart = async () => {
     try {
-      // guard user
       if (!user || !user.uid) {
-        notifyError("প্রথমে সাইন ইন করুন।");
+        notifyError("প্রথমে লগিন করুন");
         console.warn("addToCart aborted: no user or user.uid", { user });
         return;
       }
 
-      // ensure product id exists
       const pid = product.id ?? product.productId;
       if (!pid) {
-        notifyError("এই প্রোডাক্টে ID নেই, কার্টে যোগ করা সম্ভব নেই।");
+        notifyError("পণ্যের আইডি পাওয়া যায়নি, কার্টে যোগ করা সম্ভব নয়");
         console.error("addToCart aborted: product missing id", { product });
         return;
       }
 
-      // parse inputs
-      const cartonNum = Math.max(0, Math.floor(Number(cartonQty) || 0));
+      let cartonNum = Math.max(0, Math.floor(Number(cartonQty) || 0));
       let boxNum = Math.max(0, Math.floor(Number(boxQty) || 0));
       const boxPer = getBoxInCarton() || 1;
 
-      // normalize overflow boxes -> cartons (optional UX: you might update UI instead)
       if (boxNum >= boxPer) {
         const extra = Math.floor(boxNum / boxPer);
+        cartonNum += extra;
         boxNum = boxNum % boxPer;
-        // you can also reflect extra in cartonNum if you want:
-        // cartonNum = cartonNum + extra; // if cartons variable were let
-        // we won't mutate state here; just compute totalBoxes below
         console.info(`Converting overflow boxes to cartons: extra=${extra}`);
       }
 
       const totalBoxes = cartonNum * boxPer + boxNum;
 
       if (!Number.isFinite(totalBoxes) || totalBoxes <= 0) {
-        notifyError("পরিমাণ ১ বা তার বেশি হতে হবে।");
+        notifyError("পরিমাণ শূণ্য অপেক্ষা বেশি হতে হবে");
         console.warn("Invalid totalBoxes", {
           cartonNum,
           boxNum,
@@ -116,13 +109,11 @@ export default function Products({ product }) {
         return;
       }
 
-      // a minimal product object to pass to util
-      // inside Products component, handleAddToCart
       const productForCart = {
         id: pid,
         name: product.name,
         price: product.price,
-        image: product.image ?? product.imageUrl ?? null, // <-- add this
+        image: product.image ?? product.imageUrl ?? null,
         boxInCarton: product.boxInCarton ?? product.cartoonAmount ?? 1,
       };
 
@@ -135,13 +126,11 @@ export default function Products({ product }) {
       await addToCart(user.uid, productForCart, totalBoxes);
       notifySuccess(`✅ ${product.name} কার্টে যোগ হয়েছে!`);
 
-      // reset UI
       setCartonQty(0);
       setBoxQty(0);
     } catch (err) {
       console.error("handleAddToCart error:", err);
-      const message =
-        err?.message || "কার্টে যোগ করতে সমস্যা হয়েছে। কনসোলে দেখুন।";
+      const message = err?.message || "কার্টে যোগ করতে সমস্যা হয়েছে";
       notifyError(message);
     }
   };
@@ -154,7 +143,7 @@ export default function Products({ product }) {
 
   const deleteProduct = async (id) => {
     if (!id) {
-      notifyError("Product ID is required");
+      notifyError("পণ্যের আইডি পাওয়া যায়নি, ডিলিট করা সম্ভব নয়");
       return;
     }
 
@@ -163,20 +152,20 @@ export default function Products({ product }) {
       notifySuccess(`✅ ${product.name} সফলভাবে ডিলিট হয়েছে!`);
     } catch (err) {
       console.error(err);
-      notifyError("❌ Error deleting product");
+      notifyError("পণ্য ডিলিট করা সম্ভব হয়নি");
     }
   };
 
   const handleDelete = async () => {
     const confirmDelete = window.confirm(
-      `আপনি কি নিশ্চিত যে "${product.name}" মুছে ফেলতে চান?`
+      `আপনি কি নিশ্চিত যে "${product.name}" ডিলিট করতে চান?`
     );
     if (!confirmDelete) return;
 
     try {
       await deleteProduct(product.id);
     } catch (err) {
-      notifyError("ডিলিট করতে ব্যর্থ। আবার চেষ্টা করুন।");
+      notifyError("ডিলিট করা সম্ভব হয়নি। আবার চেষ্টা করুন");
     }
   };
 
@@ -228,7 +217,7 @@ export default function Products({ product }) {
         case FIELDS.NAME: {
           const v = (editValue || "").trim();
           if (!v) {
-            notifyError("নাম লিখুন।");
+            notifyError("পণ্যের নাম লিখুন");
             return;
           }
           updateData = { name: v };
@@ -238,7 +227,7 @@ export default function Products({ product }) {
         case FIELDS.SKU: {
           const v = (editValue || "").trim();
           if (!v) {
-            notifyError("SKU লিখুন।");
+            notifyError("পণ্যের SKU নাম্বার লিখুন");
             return;
           }
           updateData = { sku: v };
@@ -248,7 +237,7 @@ export default function Products({ product }) {
         case FIELDS.IMAGE: {
           const v = (editValue || "").trim();
           if (!v) {
-            notifyError("ছবির URL দিন।");
+            notifyError("পণ্যের ছবির লিংক দিন");
             return;
           }
           updateData = { image: v };
@@ -256,7 +245,6 @@ export default function Products({ product }) {
         }
 
         case FIELDS.BOXES: {
-          // Admin sets total boxes directly (submittedBoxes = newValue, keep submittedCartons)
           const v = parseInt(
             String(editValue || "")
               .replace(/,/g, "")
@@ -264,17 +252,13 @@ export default function Products({ product }) {
             10
           );
           if (!Number.isFinite(v) || v < 0) {
-            notifyError("বৈধ বক্স সংখ্যা দিন (0 বা ধনাত্মক)।");
+            notifyError("বক্সের পরিমাণ শূণ্য অপেক্ষা বেশী হতে হবে");
             return;
           }
 
-          // get current submittedCartons (fallback to deriving from stock)
           const { submittedCartons, submittedBoxes: _ } = getSubmitted();
-
-          // set submittedBoxes to v, keep submittedCartons
           const newSubmittedCartons = submittedCartons ?? 0;
           const newSubmittedBoxes = v;
-
           const boxInCarton = getBoxInCarton();
           const total = newSubmittedCartons * boxInCarton + newSubmittedBoxes;
           const normalizedCartons = Math.floor(total / boxInCarton);
@@ -295,7 +279,6 @@ export default function Products({ product }) {
         }
 
         case FIELDS.CARTONS: {
-          // Admin sets submitted cartons (preserve displayed remainder)
           const v = parseInt(
             String(editValue || "")
               .replace(/,/g, "")
@@ -303,20 +286,17 @@ export default function Products({ product }) {
             10
           );
           if (!Number.isFinite(v) || v < 0) {
-            notifyError("বৈধ কার্টুন সংখ্যা দিন (0 বা ধনাত্মক)।");
+            notifyError("কার্টনের পরিমাণ শূণ্য বা তার থেকে বেশী হতে হবে");
             return;
           }
 
           const boxInCarton = getBoxInCarton();
-
-          // derive current display remainder (displayBoxes) from totalBoxes
           const currTotalBoxes =
             typeof product.stock === "number"
               ? product.stock
               : product.inventory?.totalBoxes ?? 0;
           const currentDisplayBoxes = currTotalBoxes % boxInCarton;
 
-          // Now set submittedCartons = v and submittedBoxes = currentDisplayBoxes
           const newSubmittedCartons = v;
           const newSubmittedBoxes = currentDisplayBoxes;
 
@@ -339,7 +319,6 @@ export default function Products({ product }) {
         }
 
         case FIELDS.BOX_PER_CARTON: {
-          // Admin updates boxInCarton; keep submitted values unchanged and recompute normalized display
           const v = parseInt(
             String(editValue || "")
               .replace(/,/g, "")
@@ -347,16 +326,13 @@ export default function Products({ product }) {
             10
           );
           if (!Number.isFinite(v) || v <= 0) {
-            notifyError("কার্টুনে বক্সের সংখ্যা (কমপক্ষে 1) দিন।");
+            notifyError("কার্টনে বক্সের পরিমাণ শূণ্য অপেক্ষা বেশী হতে হবে");
             return;
           }
 
-          // get submitted values (or derive)
           const { submittedCartons, submittedBoxes } = getSubmitted();
           const newSubmittedCartons = submittedCartons ?? 0;
           const newSubmittedBoxes = submittedBoxes ?? 0;
-
-          // totalBoxes remains based on submitted values (unchanged)
           const total = newSubmittedCartons * v + newSubmittedBoxes;
           const normalizedCartons = Math.floor(total / v);
           const normalizedBoxes = total % v;
@@ -382,7 +358,7 @@ export default function Products({ product }) {
               .trim()
           );
           if (!Number.isFinite(v) || v <= 0) {
-            notifyError("বৈধ ক্রয়মূল্য দিন।");
+            notifyError("ক্রয়মূল্য শূণ্য অপেক্ষা বেশী হতে হবে");
             return;
           }
           updateData = { pur_price: v };
@@ -396,7 +372,7 @@ export default function Products({ product }) {
               .trim()
           );
           if (!Number.isFinite(v) || v <= 0) {
-            notifyError("বৈধ বিক্রয়মূল্য দিন।");
+            notifyError("বিক্রয়মূল্য শূণ্য অপেক্ষা বেশী হতে হবে");
             return;
           }
           updateData = { price: v };
@@ -404,18 +380,18 @@ export default function Products({ product }) {
         }
 
         default:
-          notifyError("অনুগ্রহ করে একটি ফিল্ড সিলেক্ট করুন।");
+          notifyError("অনুগ্রহ করে একটি ফিল্ড সিলেক্ট করুন");
           return;
       }
 
       await updateDoc(productRef, updateData);
-      notifySuccess("✅ প্রোডাক্ট সফলভাবে আপডেট হয়েছে!");
+      notifySuccess("প্রোডাক্ট সফলভাবে আপডেট হয়েছে!");
       setIsEditing(false);
       setSelectedField("");
       setEditValue("");
     } catch (err) {
       console.error(err);
-      notifyError("❌ প্রোডাক্ট আপডেট করতে সমস্যা হয়েছে!");
+      notifyError("প্রোডাক্ট আপডেট করতে সমস্যা হয়েছে!");
     }
   };
 
@@ -429,25 +405,31 @@ export default function Products({ product }) {
       <div className="flex-1 mt-2 sm:mt-0 sm:ml-4">
         <div className="flex flex-col sm:flex-row sm:justify-between gap-2.5 mb-2">
           <div>
-            <div className="font-semibold">{product.name}</div>
-            <div className="text-xs text-[#94a3b8]">SKU: {product.sku}</div>
-            <div className="text-xs text-[#94a3b8] my-2">
-              ১ কার্টুন = {getBoxInCarton()} বক্স
+            <div className="font-normal text-base">{product.name}</div>
+            <div className="text-xs text-[#94a3b8]">
+              ১ কার্টন ={" "}
+              {getBoxInCarton().toLocaleString("bn-BD")} বক্স
             </div>
+            {/* <div className="text-xs text-[#94a3b8]">SKU: {product.sku}</div> */}
           </div>
-          <div className="text-left sm:text-right">
+          <div className="text-base text-left sm:text-right">
             {user && isAdminPage ? (
               <div>
-                বিক্রয়মূল্য: {product.price} <br />
-                ক্রয়মূল্য: {product.pur_price}
+                বিক্রয়মূল্য:{" "}
+                {product.price.toLocaleString("bn-BD")} টাকা
+                <br />
+                ক্রয়মূল্য:{" "}
+                {product.pur_price.toLocaleString("bn-BD")} টাকা
               </div>
             ) : (
               <div className="font-semibold text-green-400">
-                মূল্য: {effective}
+                মূল্য: {effective.toLocaleString("bn-BD")} টাকা
               </div>
             )}
             <div className="text-xs text-[#94a3b8]">
-              স্টক: {displayCartons} কার্টুন এবং {displayBoxes} বক্স
+              পণ্যের পরিমাণ:{" "}
+              {displayCartons.toLocaleString("bn-BD")} কার্টন
+              এবং {displayBoxes.toLocaleString("bn-BD")} বক্স
             </div>
           </div>
         </div>
@@ -559,7 +541,7 @@ export default function Products({ product }) {
               <div className="flex flex-row gap-2">
                 <div className="flex flex-col flex-1 min-w-[100px]">
                   <NumberInputField
-                    label="কার্টুন"
+                    label="কার্টন"
                     min={0}
                     value={cartonQty}
                     onChange={(e) => setCartonQty(Number(e.target.value))}

@@ -9,7 +9,7 @@ export default function InputField({
   return (
     <div className="flex flex-col">
       {label && (
-        <label htmlFor={id} className="pb-1.5">
+        <label htmlFor={id} className="pb-1.5 text-base">
           {label}
         </label>
       )}

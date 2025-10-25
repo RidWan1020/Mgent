@@ -1,12 +1,13 @@
-import Heading from "../../Components/Heading";
-import PrimaryButton from "../../Components/PrimaryButton";
-import InputField from "../../Components/InputField";
-import NumberInputField from "../../Components/NumberInputField";
+import Heading from "@Components/Heading";
+import PrimaryButton from "@Components/PrimaryButton";
+import SecondaryButton from "@Components/SecondaryButton";
+import InputField from "@Components/InputField";
+import NumberInputField from "@Components/NumberInputField";
 
-import { useNotification } from "../../../Context/NotificationContext";
+import { useNotification } from "@Context/NotificationContext";
 import { useState } from "react";
 import { collection, addDoc } from "firebase/firestore";
-import { db } from "../../../Config/firebase";
+import { db } from "@Configs/firebase";
 
 export default function NewItemAdd() {
   const [loading, setLoading] = useState(false);
@@ -15,22 +16,27 @@ export default function NewItemAdd() {
   const [name, setName] = useState("");
   const [sku, setSku] = useState("");
   const [url, setUrl] = useState("");
-  const [cost, setCost] = useState("");
-  const [sale, setSale] = useState("");
-  const [boxAmount, setBoxAmount] = useState("0");
-  const [cartonAmount, setCartonAmount] = useState("0");
-  const [boxInCarton, setBoxInCarton] = useState("1");
+  const [cost, setCost] = useState(0);
+  const [sale, setSale] = useState(0);
+  const [boxAmount, setBoxAmount] = useState(0);
+  const [cartonAmount, setCartonAmount] = useState(0);
+  const [boxInCarton, setBoxInCarton] = useState(0);
 
   const resetForm = () => {
     setName("");
     setSku("");
     setUrl("");
-    setCost("");
-    setSale("");
-    setBoxAmount("0");
-    setCartonAmount("0");
-    setBoxInCarton("1");
+    setCost(0);
+    setSale(0);
+    setBoxAmount(0);
+    setCartonAmount(0);
+    setBoxInCarton(0);
   };
+
+  const clearForm = () => {
+    resetForm();
+    notifySuccess("ক্লিয়ার করা হয়েছে")
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,34 +62,32 @@ export default function NewItemAdd() {
     );
 
     if (!nameTrim) {
-      notifyError("নামের ফিল্ড পূরণ করুন।");
+      notifyError("পণ্যের নাম ঠিকভাবে দিন");
       setLoading(false);
       return;
     }
     if (!skuTrim) {
-      notifyError("SKU দিন।");
+      notifyError("পণ্যের SKU ঠিকভাবে দিন");
       setLoading(false);
       return;
     }
     if (isNaN(costNum) || costNum <= 0) {
-      notifyError("বৈধ ক্রয়মূল্য (বড়তর শূন্য) দিন।");
+      notifyError("ক্রয়মূল্য শূণ্য অপেক্ষা বেশি হতে হবে");
       setLoading(false);
       return;
     }
     if (isNaN(saleNum) || saleNum <= 0) {
-      notifyError("বৈধ বিক্রয়মূল্য (বড়তর শূন্য) দিন।");
+      notifyError("বিক্রয়মূল্য শূণ্য অপেক্ষা বেশি হতে হবে");
       setLoading(false);
       return;
     }
     if (!Number.isInteger(boxInCartonNum) || boxInCartonNum <= 0) {
-      notifyError("কার্টুনে বক্স পছন্দসই সংখ্যাটি (কমপক্ষে 1) দিন।");
+      notifyError("কার্টনে বক্সের পরিমাণ শূণ্য অপেক্ষা বেশি হতে হবে");
       setLoading(false);
       return;
     }
     if (isNaN(boxNum) || boxNum < 0 || isNaN(cartonNum) || cartonNum < 0) {
-      notifyError(
-        "বক্স ও কার্টুন পরিমাণ অবশ্যই 0 বা ধনাত্মক পূর্ণসংখ্যা হতে হবে।"
-      );
+      notifyError("বক্স ও কার্টুন পরিমাণ শূণ্য অপেক্ষা বেশি হতে হবে");
       setLoading(false);
       return;
     }
@@ -116,11 +120,11 @@ export default function NewItemAdd() {
 
     try {
       await addDoc(collection(db, "products"), payload);
-      notifySuccess("Product added successfully!");
+      notifySuccess("নতুন পণ্য যোগ করা হয়েছে");
       resetForm();
     } catch (err) {
       console.error(err);
-      notifyError("Failed to add product. Try again.");
+      notifyError("পন্য যোগ করা যায়নি। পুনরায় চেষ্টা করুন");
     } finally {
       setLoading(false);
     }
@@ -128,7 +132,7 @@ export default function NewItemAdd() {
 
   return (
     <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="🧱 নতুন আইটেম" />
+      <Heading text="🧱 নতুন পণ্য" />
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col gap-2 p-3">
           <InputField
@@ -138,7 +142,7 @@ export default function NewItemAdd() {
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          <div className="flex flex-row gap-2.5">
+          <div className="flex flex-row gap-2.5 pt-2">
             <InputField
               label="SKU"
               id="itemSku"
@@ -147,7 +151,7 @@ export default function NewItemAdd() {
               onChange={(e) => setSku(e.target.value)}
             />
             <NumberInputField
-              label="কার্টুনে বক্সের পরিমাণ"
+              label="কার্টনে বক্সের পরিমাণ"
               id="boxIncarton"
               min={1}
               value={boxInCarton}
@@ -155,13 +159,13 @@ export default function NewItemAdd() {
             />
           </div>
           <InputField
-            label="ছবির URL"
+            label="ছবির লিংক"
             id="itemImg"
             placeholder="https://..."
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
-          <div className="flex flex-row gap-2.5">
+          <div className="flex flex-row gap-2.5 pt-2">
             <NumberInputField
               label="ক্রয়মূল্য"
               id="itemCost"
@@ -186,14 +190,20 @@ export default function NewItemAdd() {
               onChange={(e) => setBoxAmount(e.target.value)}
             />
             <NumberInputField
-              label="কার্টুনের পরিমাণ"
+              label="কার্টনের পরিমাণ"
               id="itemCartonAmount"
               min={0}
               value={cartonAmount}
               onChange={(e) => setCartonAmount(e.target.value)}
             />
           </div>
-          <PrimaryButton type="submit" text={loading ? "Adding..." : "সেভ"} />
+          <div className="flex items-center justify-center gap-2 pt-2">
+            <PrimaryButton
+              type="submit"
+              text={loading ? "যোগ করা হচ্ছে..." : "যোগ করুন"}
+            />
+            <SecondaryButton text="ক্লিয়ার" onClick={clearForm} />
+          </div>
         </div>
       </form>
     </section>

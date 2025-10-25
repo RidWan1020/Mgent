@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import Notification from "../src/Components/ToastNotification";
+import Notification from "@Components/ToastNotification";
 
 const NotificationContext = createContext();
 
@@ -11,12 +11,12 @@ export const NotificationProvider = ({ children }) => {
   }, []);
 
   const notifySuccess = useCallback(
-    (message) => notify("success", "✅ সফল", message),
+    (message) => notify("success", "সফল", message),
     [notify]
   );
 
   const notifyError = useCallback(
-    (message) => notify("error", "❌ ত্রুটি", message),
+    (message) => notify("error", "ত্রুটি", message),
     [notify]
   );
 

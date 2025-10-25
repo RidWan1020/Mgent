@@ -8,7 +8,11 @@ export default function SelectInput({
 }) {
   return (
     <div className="flex flex-col">
-      <label className="pb-1.5">{label}</label>
+      {label && (
+        <label htmlFor={id} className="pb-1.5 text-base">
+          {label}
+        </label>
+      )}
       <select
         id={id}
         onChange={onChange}

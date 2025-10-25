@@ -7,15 +7,14 @@ import {
   orderBy,
   onSnapshot,
 } from "firebase/firestore";
+import { db } from "@Configs/firebase";
 
-import { db } from "../../../Config/firebase";
-
-import Heading from "../../Components/Heading";
-import SecondaryButton from "../../Components/SecondaryButton";
-import AccordionItem from "../../Components/AccordionItem";
-import InputField from "../../Components/InputField";
-import SelectInput from "../../Components/SelectInput";
-import { useNotification } from "../../../Context/NotificationContext";
+import Heading from "@Components/Heading";
+import SecondaryButton from "@Components/SecondaryButton";
+import AccordionItem from "@Components/AccordionItem";
+import InputField from "@Components/InputField";
+import SelectInput from "@Components/SelectInput";
+import { useNotification } from "@Context/NotificationContext";
 
 export default function UserItemRequests() {
   const { notifySuccess, notifyError } = useNotification();
@@ -23,12 +22,9 @@ export default function UserItemRequests() {
   const [requests, setRequests] = useState([]);
   const [openId, setOpenId] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // filter/search state
   const [filterBy, setFilterBy] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // load requests in real-time
   useEffect(() => {
     const q = query(
       collection(db, "itemRequest"),
@@ -43,7 +39,7 @@ export default function UserItemRequests() {
       },
       (err) => {
         console.error("itemRequest onSnapshot error:", err);
-        notifyError("Failed to load requests (see console).");
+        notifyError("লোড করতে সমস্যা হয়েছে। পেইজ রিফ্রেস করুন");
         setLoading(false);
       }
     );
@@ -60,24 +56,22 @@ export default function UserItemRequests() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this request?"))
+    if (!window.confirm("আপনি কি নিশ্চিতভাবে ডিলিট করতে চান?"))
       return;
 
-    // optimistic update
     const prev = requests;
     setRequests((prevList) => prevList.filter((r) => r.id !== id));
 
     try {
       await deleteDoc(doc(db, "itemRequest", id));
-      notifySuccess("Request deleted");
+      notifySuccess("সফলভাবে ডিলিট করা হয়েছে");
     } catch (err) {
       console.error("Error deleting request:", err);
-      notifyError("Failed to delete request. It will be reloaded.");
-      setRequests(prev); // rollback
+      notifyError("ডিলিট করতে সমস্যা হয়েছে। পুনরায় চেষ্টা করুন");
+      setRequests(prev);
     }
   };
 
-  // Derived filtered list (memoized)
   const filteredRequests = useMemo(() => {
     if (
       !searchQuery ||
@@ -91,7 +85,6 @@ export default function UserItemRequests() {
 
     return requests.filter((r) => {
       if (filterBy === "All") {
-        // search across requestedBy, name, explanation
         return (
           String(r.requestedBy || "")
             .toLowerCase()
@@ -123,30 +116,29 @@ export default function UserItemRequests() {
 
   return (
     <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="📨 ইউজার থেকে আইটেম রিকোয়েস্ট" />
+      <Heading text="📨 ব্যবহারকারী থেকে পণ্যের অনুরোধ" />
       <div className="px-3 py-3">
-        {/* Filter + Search controls */}
-        <div className="flex md:items-center gap-3 mb-3">
+        <div className="flex md:items-center gap-3 px-3 py-3">
           <SelectInput
             id="filterBy"
-            placeholder="Filter"
+            placeholder="ফিল্টার"
             value={filterBy}
-            options={["All", "User", "Item"]}
+            options={["সবকিছু", "ব্যবহারকারী", "পণ্য"]}
             onChange={(e) => setFilterBy(e.target.value)}
           />
           <InputField
             id="searchRequests"
             placeholder={
               filterBy === "User"
-                ? "Search user..."
+                ? "ব্যবহারকারী খুঁজুন"
                 : filterBy === "Item"
-                ? "Search item..."
-                : "Search requests..."
+                ? "পণ্য খুঁজুন"
+                : "খুঁজুন"
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <SecondaryButton text="Clear" onClick={clearSearch} />
+          <SecondaryButton text="ক্লিয়ার" onClick={clearSearch} />
         </div>
 
         {loading && (
@@ -155,11 +147,11 @@ export default function UserItemRequests() {
 
         {!loading && filteredRequests.length === 0 && (
           <div className="text-sm text-[#94a3b8] px-3 py-4">
-            কোনো রিকোয়েস্ট নেই
+            কোনো পণ্যের অনুরোধ নেই
           </div>
         )}
 
-        <div className="space-y-3">
+        <div className="space-y-3 max-h-80 px-3 overflow-y-auto">
           {filteredRequests.map((req) => {
             const when = formatWhen(req.createdAt);
             const title = req.name || "—";

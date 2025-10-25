@@ -1,7 +1,7 @@
-import Heading from "../../Components/Heading";
-import PrimaryButton from "../../Components/PrimaryButton";
-import SecondaryButton from "../../Components/SecondaryButton";
-import NumberInputField from "../../Components/NumberInputField";
+import Heading from "@Components/Heading";
+import PrimaryButton from "@Components/PrimaryButton";
+import SecondaryButton from "@Components/SecondaryButton";
+import NumberInputField from "@Components/NumberInputField";
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -12,11 +12,10 @@ import {
   addDoc,
   collection,
 } from "firebase/firestore";
-import { db } from "../../../Config/firebase";
-import { useAuth } from "../../../Context/AuthContext";
-import { useNotification } from "../../../Context/NotificationContext";
+import { db } from "@Configs/firebase";
+import { useAuth } from "@Context/AuthContext";
+import { useNotification } from "@Context/NotificationContext";
 
-/* Small helper */
 const fmt = (n) => {
   if (!Number.isFinite(n)) return "0.00";
   return (Math.round(n * 100) / 100).toFixed(2);
@@ -27,7 +26,8 @@ export default function CartAndMemo() {
   const { notifyError, notifySuccess } = useNotification();
 
   const [cart, setCart] = useState({ items: [], loading: true });
-  const [localEditing, setLocalEditing] = useState({}); // { [productId]: "12.5" }
+  // localEditing: { [productId]: { cartons?: string|number, boxes?: string|number, discount?: string|number } }
+  const [localEditing, setLocalEditing] = useState({});
 
   useEffect(() => {
     if (!user || !user.uid) {
@@ -52,7 +52,7 @@ export default function CartAndMemo() {
       },
       (err) => {
         console.error("cart onSnapshot error:", err);
-        notifyError("Failed to load cart.");
+        notifyError("কার্ট লোড করতে সমস্যা হয়েছে। পুনরায় চেষ্টা করুন");
         setCart({ items: [], loading: false });
       }
     );
@@ -62,7 +62,7 @@ export default function CartAndMemo() {
 
   const updateCartItems = async (newItems) => {
     if (!user || !user.uid) {
-      notifyError("No user.");
+      notifyError("প্রথমে লগিন করুন");
       return;
     }
     try {
@@ -72,39 +72,58 @@ export default function CartAndMemo() {
       });
     } catch (err) {
       console.error("Failed to update cart:", err);
-      notifyError("Failed to update cart.");
+      notifyError("কার্ট আপডেট করতে সমস্যা হয়েছে");
       throw err;
     }
   };
 
   const removeItem = async (productId) => {
     if (!user || !user.uid) {
-      notifyError("প্রথমে সাইন ইন করুন।");
+      notifyError("প্রথমে লগিন করুন।");
       return;
     }
     const newItems = (cart.items || []).filter((i) => i.productId !== productId);
     try {
       await updateCartItems(newItems);
-      notifySuccess("Item removed");
-    } catch (err) {}
+      // clear local edits for this product
+      setLocalEditing((p) => {
+        const copy = { ...(p || {}) };
+        if (copy[productId]) delete copy[productId];
+        return copy;
+      });
+      notifySuccess("পণ্য সরানো হয়েছে");
+    } catch (err) {
+      // error handled in updateCartItems
+    }
   };
 
   const clearCart = async () => {
     if (!user || !user.uid) return;
     try {
       await updateCartItems([]);
-      notifySuccess("Cart cleared");
+      // clear all local edits
+      setLocalEditing({});
+      notifySuccess("কার্ট ক্লিয়ার করা হয়েছে");
     } catch (err) {}
   };
 
+  const setLocalField = (productId, patch) => {
+    setLocalEditing((p) => ({
+      ...(p || {}),
+      [productId]: { ...(p?.[productId] || {}), ...patch },
+    }));
+  };
+
+  // Discount handlers
   const onDiscountChangeLocal = (productId, val) => {
-    setLocalEditing((p) => ({ ...p, [productId]: val }));
+    // keep as string for UX; we'll parse on save
+    setLocalField(productId, { discount: val });
   };
 
   const saveDiscount = async (productId) => {
     if (!user || !user.uid) return;
-    const raw = localEditing[productId];
-    const newDiscount = Math.max(0, Number((raw ?? "").toString().trim() || 0));
+    const raw = (localEditing[productId]?.discount ?? "").toString();
+    const newDiscount = Math.max(0, Number(raw.trim() || 0));
 
     const items = (cart.items || []).map((it) =>
       it.productId === productId ? { ...it, discount: newDiscount } : it
@@ -112,15 +131,77 @@ export default function CartAndMemo() {
 
     try {
       await updateCartItems(items);
-      notifySuccess("Discount updated");
+      notifySuccess("ডিসকাউন্ট আপডেট করা হয়েছে");
       setLocalEditing((p) => {
-        const copy = { ...p };
-        delete copy[productId];
+        const copy = { ...(p || {}) };
+        if (copy[productId]) {
+          delete copy[productId].discount;
+          if (Object.keys(copy[productId]).length === 0) delete copy[productId];
+        }
         return copy;
       });
-    } catch (err) {}
+    } catch (err) {
+      // handled upstream
+    }
   };
 
+  // Quantity handlers
+  const onQtyChangeLocal = (productId, patch) => {
+    // patch: { cartons: val } or { boxes: val } -- keep as string for UX
+    setLocalField(productId, patch);
+  };
+
+  const saveQty = async (productId) => {
+    if (!user || !user.uid) return;
+
+    const it = (cart.items || []).find((x) => x.productId === productId);
+    if (!it) return;
+
+    const boxInCarton = Number(it.boxInCarton ?? it.cartoonAmount ?? 1) || 1;
+    const local = localEditing?.[productId] || {};
+
+    // parse numbers (fall back to persisted)
+    const persistedTotalBoxes = Number(it.totalBoxes ?? it.qty ?? 0) || 0;
+    const persistedCartons = Math.floor(persistedTotalBoxes / boxInCarton);
+    const persistedBoxes = persistedTotalBoxes % boxInCarton;
+
+    const cartonsLocal = Number(local.cartons ?? persistedCartons) || 0;
+    const boxesLocal = Number(local.boxes ?? persistedBoxes) || 0;
+
+    // normalize overflow
+    let cartons = Math.max(0, Math.floor(cartonsLocal));
+    let boxes = Math.max(0, Math.floor(boxesLocal));
+    if (boxes >= boxInCarton) {
+      const extra = Math.floor(boxes / boxInCarton);
+      cartons += extra;
+      boxes = boxes % boxInCarton;
+    }
+
+    const totalBoxes = cartons * boxInCarton + boxes;
+
+    const newItems = (cart.items || []).map((x) =>
+      x.productId === productId ? { ...x, totalBoxes } : x
+    );
+
+    try {
+      await updateCartItems(newItems);
+      notifySuccess("পরিমাণ আপডেট করা হয়েছে");
+      // clear local qty edits for that product
+      setLocalEditing((p) => {
+        const copy = { ...(p || {}) };
+        if (copy[productId]) {
+          delete copy[productId].cartons;
+          delete copy[productId].boxes;
+          if (Object.keys(copy[productId]).length === 0) delete copy[productId];
+        }
+        return copy;
+      });
+    } catch (err) {
+      // handled upstream
+    }
+  };
+
+  // totals respect local edits (preview)
   const totals = useMemo(() => {
     const items = cart.items || [];
     let subtotal = 0;
@@ -128,9 +209,24 @@ export default function CartAndMemo() {
     let grandTotal = 0;
 
     items.forEach((it) => {
-      const unitPrice = Number(it.unitPrice || 0); // price per box
-      const totalBoxes = Number(it.totalBoxes ?? it.qty ?? 0);
-      const discount = Number(it.discount || 0);
+      const boxInCarton = Number(it.boxInCarton ?? it.cartoonAmount ?? 1) || 1;
+      const local = localEditing?.[it.productId] || {};
+
+      const persistedTotalBoxes = Number(it.totalBoxes ?? it.qty ?? 0) || 0;
+      const persistedCartons = Math.floor(persistedTotalBoxes / boxInCarton);
+      const persistedBoxes = persistedTotalBoxes % boxInCarton;
+
+      const cartonsLocal = Number(local.cartons ?? persistedCartons) || 0;
+      const boxesLocal = Number(local.boxes ?? persistedBoxes) || 0;
+      const totalBoxes = Math.max(
+        0,
+        Math.floor(cartonsLocal) * boxInCarton + Math.floor(boxesLocal)
+      );
+
+      const unitPrice = Number(it.unitPrice || it.price || 0) || 0;
+      const discount = Number(
+        local.discount !== undefined ? Number(local.discount || 0) : Number(it.discount || 0)
+      ) || 0;
 
       const lineBefore = unitPrice * totalBoxes;
       subtotal += lineBefore;
@@ -139,14 +235,13 @@ export default function CartAndMemo() {
     });
 
     return { subtotal, discountSum, grandTotal };
-  }, [cart]);
+  }, [cart, localEditing]);
 
   const isLoading = cart.loading;
 
-  // --- CREATE MEMO ---
   const createMemo = async () => {
     if (!user || !user.uid) {
-      notifyError("প্রথমে সাইন ইন করুন।");
+      notifyError("প্রথমে লগিন করুন।");
       return;
     }
 
@@ -156,14 +251,27 @@ export default function CartAndMemo() {
       return;
     }
 
-    // Build line items
     const lines = items.map((it) => {
       const boxInCarton = Number(it.boxInCarton ?? it.cartoonAmount ?? 1) || 1;
-      const totalBoxes = Number(it.totalBoxes ?? it.qty ?? 0);
-      const cartons = Math.floor(totalBoxes / boxInCarton);
-      const boxes = totalBoxes % boxInCarton;
-      const unitPrice = Number(it.unitPrice || it.price || 0);
-      const discount = Number(it.discount || 0);
+      const local = localEditing?.[it.productId] || {};
+
+      const persistedTotalBoxes = Number(it.totalBoxes ?? it.qty ?? 0) || 0;
+      const persistedCartons = Math.floor(persistedTotalBoxes / boxInCarton);
+      const persistedBoxes = persistedTotalBoxes % boxInCarton;
+
+      const cartons = Number(local.cartons ?? persistedCartons) || 0;
+      const boxes = Number(local.boxes ?? persistedBoxes) || 0;
+      const normalizedCartons = Math.max(0, Math.floor(cartons));
+      const normalizedBoxes = Math.max(0, Math.floor(boxes));
+      const totalBoxes = Math.max(
+        0,
+        normalizedCartons * boxInCarton + normalizedBoxes
+      );
+
+      const unitPrice = Number(it.unitPrice || it.price || 0) || 0;
+      const discount = Number(
+        local.discount !== undefined ? Number(local.discount || 0) : Number(it.discount || 0)
+      ) || 0;
       const lineBefore = unitPrice * totalBoxes;
       const lineAfter = Math.max(0, lineBefore - Math.max(0, discount));
 
@@ -172,8 +280,8 @@ export default function CartAndMemo() {
         name: it.name,
         image: it.image ?? it.imageUrl ?? null,
         boxInCarton,
-        cartons,
-        boxes,
+        cartons: Math.floor(totalBoxes / boxInCarton),
+        boxes: totalBoxes % boxInCarton,
         totalBoxes,
         unitPrice,
         discount,
@@ -196,18 +304,18 @@ export default function CartAndMemo() {
 
     try {
       await addDoc(collection(db, "memos"), payload);
-      notifySuccess("Memo created successfully");
-      // clear cart after creating memo
+      notifySuccess("ক্যাশ মেমো তৈরি করা হয়েছে");
       await updateCartItems([]);
+      setLocalEditing({});
     } catch (err) {
       console.error("Failed to create memo:", err);
-      notifyError("Failed to create memo. Check console.");
+      notifyError("ক্যাশ মেমো তৈরিতে সমস্যা হয়েছে। পুনরায় চেষ্টা করুন");
     }
   };
 
   return (
     <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="🧾 কার্ট ও মেমো" />
+      <Heading text="🧾 আপনার কার্ট" />
       <div id="cartList" className="p-3">
         {isLoading ? (
           <div className="text-sm text-[#94a3b8] px-3 py-2">লোড হচ্ছে...</div>
@@ -215,16 +323,34 @@ export default function CartAndMemo() {
           <p className="text-center text-gray-400">কার্ট খালি</p>
         ) : (
           cart.items.map((item) => {
-            const boxInCarton =
-              Number(item.boxInCarton ?? item.cartoonAmount ?? 1) || 1;
-            const totalBoxes = Number(item.totalBoxes ?? item.qty ?? 0) || 0;
-            const cartons = Math.floor(totalBoxes / boxInCarton);
-            const boxes = totalBoxes % boxInCarton;
-            const unitPrice = Number(item.unitPrice || item.price || 0);
-            const local = localEditing[item.productId];
-            const appliedDiscount =
-              local !== undefined ? Number(local || 0) : Number(item.discount || 0);
-            const lineBefore = unitPrice * totalBoxes;
+            // normalized local + persisted values
+            const boxInCarton = Number(item.boxInCarton ?? item.cartoonAmount ?? 1) || 1;
+            const persistedTotalBoxes = Number(item.totalBoxes ?? item.qty ?? 0) || 0;
+            const persistedCartons = Math.floor(persistedTotalBoxes / boxInCarton);
+            const persistedBoxes = persistedTotalBoxes % boxInCarton;
+
+            const localObj = localEditing?.[item.productId] || {};
+            const cartonsLocal = Number(localObj.cartons ?? persistedCartons) || 0;
+            const boxesLocal = Number(localObj.boxes ?? persistedBoxes) || 0;
+
+            // normalize overflow
+            let normCartons = Math.max(0, Math.floor(cartonsLocal));
+            let normBoxes = Math.max(0, Math.floor(boxesLocal));
+            if (normBoxes >= boxInCarton) {
+              const extra = Math.floor(normBoxes / boxInCarton);
+              normCartons += extra;
+              normBoxes = normBoxes % boxInCarton;
+            }
+            const totalBoxesLocal = normCartons * boxInCarton + normBoxes;
+
+            const unitPrice = Number(item.unitPrice || item.price || 0) || 0;
+            const appliedDiscount = Number(
+              localObj.discount !== undefined
+                ? Number(localObj.discount || 0)
+                : Number(item.discount || 0)
+            ) || 0;
+
+            const lineBefore = unitPrice * totalBoxesLocal;
             const lineTotal = Math.max(0, lineBefore - Math.max(0, appliedDiscount));
 
             return (
@@ -232,7 +358,6 @@ export default function CartAndMemo() {
                 key={item.productId}
                 className="flex flex-col sm:flex-row items-start border-2 border-[#1f2937] rounded-xl p-3 bg-[#071225]"
               >
-                {/* left: image */}
                 <div className="w-full sm:w-24 flex-shrink-0 mr-0 sm:mr-4 mb-3 sm:mb-0">
                   <img
                     src={item.image || item.imageUrl || "/placeholder-rect.png"}
@@ -240,43 +365,58 @@ export default function CartAndMemo() {
                     className="w-full h-24 object-cover rounded-lg"
                   />
                 </div>
-
-                {/* center: main content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-3">
-                    {/* title + meta */}
                     <div className="min-w-0">
                       <div className="font-semibold text-sm truncate">{item.name}</div>
                       <div className="text-xs text-[#94a3b8] mt-1">
-                        {cartons} কার্টুন এবং {boxes} বক্স
+                        {normCartons.toLocaleString("bn-BD")} কার্টন এবং{" "}
+                        {normBoxes.toLocaleString("bn-BD")} বক্স
                       </div>
                     </div>
 
-                    {/* right: price (top-right, won't wrap) */}
                     <div className="flex-shrink-0 text-right ml-2">
                       <div className="font-semibold text-green-400 whitespace-nowrap">
-                        মোট: ৳{fmt(lineTotal)}
+                        মোট: {Number(fmt(lineTotal)).toLocaleString("bn-BD")} টাকা
                       </div>
                       <div className="text-xs text-[#94a3b8] whitespace-nowrap">
-                        ডিস্কাউন্ট ছাড়া: ৳{fmt(lineBefore)}
+                        ডিস্কাউন্ট ছাড়া: {Number(fmt(lineBefore)).toLocaleString("bn-BD")} টাকা
                       </div>
                     </div>
                   </div>
 
-                  {/* controls: discount (line 1) + remove (next line) */}
                   <div className="mt-3">
-                    <div className="w-full max-w-sm">
+                    <div className="flex flex-col md:flex-row gap-2">
+                      <NumberInputField
+                        id={`cartons-${item.productId}`}
+                        label="কার্টন"
+                        min={0}
+                        value={String(localObj.cartons ?? persistedCartons)}
+                        onChange={(e) =>
+                          onQtyChangeLocal(item.productId, { cartons: e.target.value })
+                        }
+                        onBlur={() => saveQty(item.productId)}
+                      />
+                      <NumberInputField
+                        id={`boxes-${item.productId}`}
+                        label="বক্স"
+                        min={0}
+                        value={String(localObj.boxes ?? persistedBoxes)}
+                        onChange={(e) =>
+                          onQtyChangeLocal(item.productId, { boxes: e.target.value })
+                        }
+                        onBlur={() => saveQty(item.productId)}
+                      />
                       <NumberInputField
                         id={`discount-${item.productId}`}
                         label="ডিসকাউন্ট (৳)"
                         min={0}
-                        value={String(local !== undefined ? local : item.discount ?? 0)}
+                        value={String(localObj.discount !== undefined ? localObj.discount : item.discount ?? 0)}
                         onChange={(e) => onDiscountChangeLocal(item.productId, e.target.value)}
                         onBlur={() => saveDiscount(item.productId)}
                       />
                     </div>
 
-                    {/* remove button forced to next line */}
                     <div className="mt-2">
                       <SecondaryButton text="রিমুভ" onClick={() => removeItem(item.productId)} />
                     </div>
@@ -290,14 +430,8 @@ export default function CartAndMemo() {
 
       <div className="flex flex-col sm:flex-row gap-3 items-center px-3 pb-3 justify-between">
         <div className="flex flex-wrap gap-2 items-center">
-          <div className="gap-1.5 items-center bg-[#061227] border border-[#2c4466] text-[#93c5fd] px-2 py-1 rounded-full text-sm">
-            সাবটোটাল: ৳{fmt(totals.subtotal)}
-          </div>
-          <div className="gap-1.5 items-center bg-[#061227] border border-[#2c4466] text-[#93c5fd] px-2 py-1 rounded-full text-sm">
-            মোট ডিসকাউন্ট: ৳{fmt(totals.discountSum)}
-          </div>
-          <div className="gap-1.5 items-center bg-[#061227] border border-[#2c4466] text-[#93c5fd] px-2 py-1 rounded-full text-sm">
-            মোট: ৳{fmt(totals.grandTotal)}
+          <div className="gap-1.5 items-center bg-[#061227] border border-[#2c4466] text-[#93c5fd] px-4 py-3 rounded-xl text-sm">
+            মোট: {Number(fmt(totals.grandTotal)).toLocaleString("bn-BD")} টাকা
           </div>
         </div>
 

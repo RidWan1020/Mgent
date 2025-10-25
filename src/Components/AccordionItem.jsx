@@ -20,7 +20,7 @@ export default function AccordionItem({
       >
         <div className="flex items-start gap-3">
           <div className="text-left">
-            <div className="text-sm font-semibold text-[#e6eef6]">{title}</div>
+            <div className="text-base font-semibold text-[#e6eef6]">{title}</div>
             {subtitle ? (
               <div className="text-xs text-[#94a3b8] mt-0.5">{subtitle}</div>
             ) : null}

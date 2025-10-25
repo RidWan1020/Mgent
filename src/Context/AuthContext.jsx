@@ -1,15 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "../Config/firebase";
+import { auth, db } from "@Configs/firebase";
 
-// Create context
 const AuthContext = createContext();
 
-// Hook for consuming context
 export const useAuth = () => useContext(AuthContext);
 
-// Provider
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
@@ -21,7 +18,6 @@ export function AuthProvider({ children }) {
       if (firebaseUser) {
         setUser(firebaseUser);
 
-        // Fetch user document from Firestore
         const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();

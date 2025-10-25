@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "firebase/firestore";
-import { db } from "../../Config/firebase";
+import { db } from "@Configs/firebase";
 
-import Products from "../Components/Products";
-import Header from "../Components/Heading";
-import InputField from "../Components/InputField";
+import Products from "@Components/Products";
+import Header from "@Components/Heading";
+import InputField from "@Components/InputField";
 
 export default function ProductsCatalog() {
   const [items, setItems] = useState([]);
@@ -28,14 +28,16 @@ export default function ProductsCatalog() {
 
   return (
     <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] shadow-[0_6px_28px_rgba(0,0,0,.25)] rounded-2xl">
-      <Header text="🧱 প্রোডাক্ট ক্যাটালগ" />
-      <div className="px-2.5 py-3">
-        <InputField
-          placeholder="সার্চ করুন..."
-          id="searchItems"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      <Header text="🧱 পণ্য তালিকা" />
+      <div className="p-2.5">
+        <div className="md:items-center p-2 gap-3">
+          <InputField
+            placeholder="সার্চ করুন..."
+            id="searchItems"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
         <div className="px-2.5 py-3">
           <div
             id="catalog"

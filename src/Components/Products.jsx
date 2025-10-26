@@ -397,29 +397,27 @@ export default function Products({ product }) {
 
   return (
     <div className="flex flex-col sm:flex-row items-start border-2 border-[#1f2937] rounded-xl p-2 bg-[#071225]">
-      <img
-        src={product.image}
-        alt={product.name}
-        className="w-full h-auto sm:w-30 sm:h-30 object-cover rounded-lg"
-      />
+      <div className="flex items-center justify-center p-2">
+        <img
+          src={product.image}
+          alt={product.name}
+          className="w-30 h-30 object-cover rounded-lg"
+        />
+      </div>
       <div className="flex-1 mt-2 sm:mt-0 sm:ml-4">
         <div className="flex flex-col sm:flex-row sm:justify-between gap-2.5 mb-2">
           <div>
             <div className="font-normal text-base">{product.name}</div>
             <div className="text-xs text-[#94a3b8]">
-              ১ কার্টন ={" "}
-              {getBoxInCarton().toLocaleString("bn-BD")} বক্স
+              ১ কার্টন = {getBoxInCarton().toLocaleString("bn-BD")} বক্স
             </div>
-            {/* <div className="text-xs text-[#94a3b8]">SKU: {product.sku}</div> */}
           </div>
           <div className="text-base text-left sm:text-right">
             {user && isAdminPage ? (
               <div>
-                বিক্রয়মূল্য:{" "}
-                {product.price.toLocaleString("bn-BD")} টাকা
+                বিক্রয়মূল্য: {product.price.toLocaleString("bn-BD")} টাকা
                 <br />
-                ক্রয়মূল্য:{" "}
-                {product.pur_price.toLocaleString("bn-BD")} টাকা
+                ক্রয়মূল্য: {product.pur_price.toLocaleString("bn-BD")} টাকা
               </div>
             ) : (
               <div className="font-semibold text-green-400">
@@ -427,9 +425,8 @@ export default function Products({ product }) {
               </div>
             )}
             <div className="text-xs text-[#94a3b8]">
-              পণ্যের পরিমাণ:{" "}
-              {displayCartons.toLocaleString("bn-BD")} কার্টন
-              এবং {displayBoxes.toLocaleString("bn-BD")} বক্স
+              পণ্যের পরিমাণ: {displayCartons.toLocaleString("bn-BD")} কার্টন এবং{" "}
+              {displayBoxes.toLocaleString("bn-BD")} বক্স
             </div>
           </div>
         </div>

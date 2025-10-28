@@ -8,6 +8,7 @@ import NewUserAdding from "@Sections/Admin/NewUserAdding";
 import UserItemRequests from "@Sections/Admin/UserItemRequests";
 import UserItemPricing from "@Sections/Admin/UserItemPricing";
 import UserCatalog from "@Sections/Admin/UserCatalog";
+import Finance from "@Sections/Admin/Finance";
 
 export default function Admin() {
   return (
@@ -15,6 +16,7 @@ export default function Admin() {
       <Header Logo={Logo} />
       <main className="w-full grid grid-cols-1 md:grid-cols-[1fr_360px] gap-4 p-4">
         <div className="space-y-4">
+          <Finance />
           <ProductsCatalog />
           <MemoCatalog />
           <UserItemRequests />

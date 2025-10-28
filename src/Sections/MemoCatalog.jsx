@@ -410,7 +410,7 @@ export default function MemoCatalog() {
             {filteredMemos.map((memo) => {
               const totals = calcMemoTotals(memo);
               const when = parseWhen(memo.createdAt);
-              const subtitle = `${memo.userName || memo.user || "Unknown"}`;
+              const subtitle = `${memo.shopName} | ${memo.shopAddress}`;
               const header = when.toLocaleString("bn-BD");
               const status = memo.status ?? "pending";
 
@@ -590,3 +590,4 @@ export default function MemoCatalog() {
     </section>
   );
 }
+

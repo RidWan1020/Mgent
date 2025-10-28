@@ -1,6 +1,4 @@
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
-
+import { PDFDownloadLink } from "@react-pdf/renderer";
 import {
   collection,
   query,
@@ -201,7 +199,6 @@ export default function MemoCatalog() {
     }
 
     try {
-      // check existing cart for this user
       const cartRef = doc(db, "carts", user.uid);
       const cartSnap = await getDoc(cartRef);
 
@@ -212,12 +209,10 @@ export default function MemoCatalog() {
           : [];
         if (existingItems.length > 0) {
           notifyError("কার্টে ইতিমধ্যে আইটেম আছে — আগে কার্ট খালি করুন");
-          return; // reject as required
+          return;
         }
       }
 
-      // Map memo.items -> cart item shape (adjust fields to match your cart schema)
-      // Keep the fields you need in the cart. Example mapping:
       const itemsForCart = (Array.isArray(memo.items) ? memo.items : []).map(
         (it) => ({
           productId: it.productId ?? it.id ?? null,
@@ -227,7 +222,6 @@ export default function MemoCatalog() {
           totalBoxes: Number(it.totalBoxes ?? it.qty ?? 0),
           unitPrice: Number(it.unitPrice ?? it.price ?? 0),
           discount: Number(it.discount ?? 0),
-          // optionally keep any other meta you need
         })
       );
 
@@ -236,7 +230,6 @@ export default function MemoCatalog() {
         return;
       }
 
-      // create/set cart doc for user (empty or new). we merge to be safe.
       await setDoc(
         cartRef,
         {
@@ -248,13 +241,11 @@ export default function MemoCatalog() {
         { merge: true }
       );
 
-      // delete the memo after creating cart
       await deleteDoc(doc(db, "memos", memo.id));
 
       notifySuccess("মেমোটি কার্টে পাঠানো হয়েছে — এখন আপনি এডিট করতে পারবেন");
     } catch (err) {
       console.error("handleEditMemo error:", err);
-      // detect permission error or other problems
       if (err?.code === "permission-denied") {
         notifyError("আপনার কাছে অনুুমতি নেই (permission-denied)");
       } else {
@@ -440,10 +431,18 @@ export default function MemoCatalog() {
                         {status}
                       </div>
                       <div className="ml-auto flex items-center gap-2">
-                        <PrimaryButton
-                          text="ডাউনলোড"
-                          onClick={() => handleDownload(memo)}
-                        />
+                        <PDFDownloadLink
+                          document={
+                            <MemoPDF
+                              memo={memo}
+                              calcMemoTotals={calcMemoTotals}
+                              parseWhen={parseWhen}
+                            />
+                          }
+                          fileName={`memo-${memo.id}.pdf`}
+                        >
+                          <PrimaryButton text="ডাউনলোড" />
+                        </PDFDownloadLink>
                         {isAdmin && status === "pending" && (
                           <div className="ml-auto flex items-center gap-2">
                             <SelectInput
@@ -538,27 +537,6 @@ export default function MemoCatalog() {
                       )}
 
                       <div className="flex items-center justify-between gap-2 mt-2">
-                        <div
-                          ref={(el) => {
-                            if (el) memoRefs.current[memo.id] = el;
-                            else delete memoRefs.current[memo.id];
-                          }}
-                          style={{
-                            position: "absolute",
-                            left: -9999,
-                            top: 0,
-                            width: "210mm",
-                            background: "white",
-                            padding: "16px",
-                            color: "#000",
-                          }}
-                        >
-                          <MemoPDF
-                            memo={memo}
-                            calcMemoTotals={calcMemoTotals}
-                            parseWhen={parseWhen}
-                          />
-                        </div>
                         <div className="flex items-center justify-between gap-2">
                           {status === "pending" && (
                             <PrimaryButton
@@ -590,4 +568,3 @@ export default function MemoCatalog() {
     </section>
   );
 }
-

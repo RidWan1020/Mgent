@@ -43,7 +43,7 @@ export default function ProductsCatalog() {
             id="catalog"
             role="region"
             aria-label="Product list"
-            className="max-h-80 overflow-y-auto space-y-3 pr-2"
+            className="max-h-screen lg:max-h-80 overflow-y-auto space-y-3 pr-2"
           >
             {filtered.length > 0 ? (
               filtered.map((item) => <Products key={item.id} product={item} />)
@@ -56,3 +56,4 @@ export default function ProductsCatalog() {
     </section>
   );
 }
+

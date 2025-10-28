@@ -1,10 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  collection,
-  query,
-  onSnapshot,
-  where,
-} from "firebase/firestore";
+import { collection, query, onSnapshot, where } from "firebase/firestore";
 import { db } from "@Configs/firebase";
 import Heading from "@Components/Heading";
 
@@ -16,90 +11,92 @@ const fmtNumber = (n) => {
 export default function Finance() {
   const [importTotal, setImportTotal] = useState(0);
   const [salesTotal, setSalesTotal] = useState(0);
+  const [productsMap, setProductsMap] = useState({});
+  const [productsInventorySum, setProductsInventorySum] = useState(0);
+  const [memoImportSum, setMemoImportSum] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
+    const unsubProducts = onSnapshot(collection(db, "products"), (snap) => {
+      let sum = 0;
+      const map = {};
+      snap.docs.forEach((d) => {
+        const p = d.data() || {};
+        const id = d.id;
+        const boxInCarton = Number(p.boxInCarton ?? p.cartoonAmount ?? 1) || 1;
 
-    const unsubProducts = onSnapshot(
-      collection(db, "products"),
-      (snap) => {
-        let sum = 0;
-        snap.docs.forEach((d) => {
-          const p = d.data() || {};
-          const boxInCarton = Number(p.boxInCarton ?? p.cartoonAmount ?? 1) || 1;
-          const totalBoxesFromInventory =
-            Number(p.inventory?.totalBoxes ?? NaN);
-          let totalBoxes = Number.isFinite(totalBoxesFromInventory)
-            ? totalBoxesFromInventory
-            : typeof p.stock === "number"
-            ? p.stock
-            : NaN;
+        const totalBoxesFromInventory = Number(p.inventory?.totalBoxes ?? NaN);
+        let totalBoxes = Number.isFinite(totalBoxesFromInventory)
+          ? totalBoxesFromInventory
+          : typeof p.stock === "number"
+          ? p.stock
+          : NaN;
 
-          if (!Number.isFinite(totalBoxes)) {
-            const invCartons = Number(p.inventory?.cartons ?? NaN);
-            const invBoxes = Number(p.inventory?.boxes ?? NaN);
-            if (Number.isFinite(invCartons) && Number.isFinite(invBoxes)) {
-              totalBoxes = invCartons * boxInCarton + invBoxes;
-            } else {
-              totalBoxes = 0;
-            }
-          }
+        if (!Number.isFinite(totalBoxes)) {
+          const invCartons = Number(p.inventory?.cartons ?? NaN);
+          const invBoxes = Number(p.inventory?.boxes ?? NaN);
+          totalBoxes =
+            Number.isFinite(invCartons) && Number.isFinite(invBoxes)
+              ? invCartons * boxInCarton + invBoxes
+              : 0;
+        }
 
-          const purPrice = Number(p.pur_price ?? p.purPrice ?? p.purchasePrice ?? 0) || 0;
-          const productTotal = totalBoxes * purPrice;
-          sum += productTotal;
-        });
+        const purPrice =
+          Number(p.pur_price ?? p.purPrice ?? p.purchasePrice ?? 0) || 0;
+        sum += totalBoxes * purPrice;
+        map[id] = { pur_price: purPrice, boxInCarton };
+      });
 
-        setImportTotal(sum);
-        setLoading(false);
-      },
-      (err) => {
-        console.error("products snapshot error", err);
-        setImportTotal(0);
-        setLoading(false);
-      }
-    );
+      setProductsMap(map);
+      setProductsInventorySum(sum);
+      setLoading(false);
+    });
 
     const q = query(collection(db, "memos"), where("status", "==", "accepted"));
-    const unsubMemos = onSnapshot(
-      q,
-      (snap) => {
-        let sum = 0;
-        snap.docs.forEach((d) => {
-          const m = d.data() || {};
-          const g = Number(m.totals?.grandTotal ?? m.totals?.total ?? NaN);
-          if (Number.isFinite(g)) {
-            sum += g;
-            return;
-          }
+    const unsubMemos = onSnapshot(q, (snap) => {
+      let salesSum = 0;
+      let memoImport = 0;
 
+      snap.docs.forEach((d) => {
+        const m = d.data() || {};
+        const g = Number(m.totals?.grandTotal ?? m.totals?.total ?? NaN);
+        if (Number.isFinite(g)) salesSum += g;
+        else {
           const items = Array.isArray(m.items) ? m.items : [];
           let localSum = 0;
           items.forEach((it) => {
             const unitPrice = Number(it.unitPrice ?? it.price ?? 0) || 0;
             const qty = Number(it.totalBoxes ?? it.qty ?? 0) || 0;
             const discount = Number(it.discount ?? 0) || 0;
-            const lineBefore = unitPrice * qty;
-            const lineAfter = Math.max(0, lineBefore - Math.max(0, discount));
-            localSum += lineAfter;
+            localSum += Math.max(0, unitPrice * qty - discount);
           });
-          sum += localSum;
-        });
+          salesSum += localSum;
+        }
 
-        setSalesTotal(sum);
-      },
-      (err) => {
-        console.error("memos snapshot error", err);
-        setSalesTotal(0);
-      }
-    );
+        const items = Array.isArray(m.items) ? m.items : [];
+        items.forEach((it) => {
+          const pid = it.productId;
+          const qty = Number(it.totalBoxes ?? it.qty ?? 0) || 0;
+          const prod = productsMap[pid];
+          if (prod) memoImport += prod.pur_price * qty;
+          else {
+            const fallbackPur =
+              Number(it.purPrice ?? it.purchasePrice ?? 0) || 0;
+            memoImport += fallbackPur * qty;
+          }
+        });
+      });
+
+      setSalesTotal(salesSum);
+      setMemoImportSum(memoImport);
+      setImportTotal(memoImport);
+    });
 
     return () => {
       unsubProducts();
       unsubMemos();
     };
-  }, []);
+  }, [productsInventorySum, memoImportSum, productsMap]);
 
   const profit = salesTotal - importTotal;
 
@@ -111,8 +108,12 @@ export default function Finance() {
         <table className="w-full text-left text-[#e6eef6] border-collapse">
           <thead className="bg-[#1f2937] text-[#20c4dd]">
             <tr>
-              <th className="p-3 border-b border-[#2d3c56] text-center">ইম্পোর্ট</th>
-              <th className="p-3 border-b border-[#2d3c56] text-center">বিক্রয়</th>
+              <th className="p-3 border-b border-[#2d3c56] text-center">
+                ইম্পোর্ট
+              </th>
+              <th className="p-3 border-b border-[#2d3c56] text-center">
+                বিক্রয়
+              </th>
               <th className="p-3 border-b border-[#2d3c56] text-center">আয়</th>
             </tr>
           </thead>
@@ -127,7 +128,11 @@ export default function Finance() {
                 ৳ {Number(fmtNumber(salesTotal)).toLocaleString("bn-BD")}
               </td>
 
-              <td className={`p-3 border-b border-[#1f2937] text-center ${profit < 0 ? "text-red-400" : "text-green-400"}`}>
+              <td
+                className={`p-3 border-b border-[#1f2937] text-center ${
+                  profit < 0 ? "text-red-400" : "text-green-400"
+                }`}
+              >
                 ৳ {Number(fmtNumber(profit)).toLocaleString("bn-BD")}
               </td>
             </tr>

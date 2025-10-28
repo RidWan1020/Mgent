@@ -322,7 +322,7 @@ export default function CartAndMemo() {
     <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
       <Heading text="🧾 আপনার কার্ট" />
       <div className="px-2.5 py-3">
-        <div className="flex flex-col lg:flex-row items-center p-3 gap-3">
+        <div className="flex p-3 gap-3">
           <InputField
             label="দোকানের নাম"
             placeholder="রিদওয়ান সরকার ট্রেডার্স"
@@ -491,4 +491,5 @@ export default function CartAndMemo() {
     </section>
   );
 }
+
 

@@ -310,6 +310,8 @@ export default function CartAndMemo() {
       notifySuccess("ক্যাশ মেমো তৈরি করা হয়েছে");
       await updateCartItems([]);
       setLocalEditing({});
+      setShopName("");
+      setShopAddress("");
     } catch (err) {
       console.error("Failed to create memo:", err);
       notifyError("ক্যাশ মেমো তৈরিতে সমস্যা হয়েছে। পুনরায় চেষ্টা করুন");
@@ -489,3 +491,4 @@ export default function CartAndMemo() {
     </section>
   );
 }
+

@@ -12,6 +12,8 @@ import {
   serverTimestamp,
   addDoc,
   collection,
+  getDoc,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "@Configs/firebase";
 import { useAuth } from "@Context/AuthContext";
@@ -306,8 +308,48 @@ export default function CartAndMemo() {
     };
 
     try {
-      await addDoc(collection(db, "memos"), payload);
+      const memoRef = await addDoc(collection(db, "memos"), payload);
       notifySuccess("ক্যাশ মেমো তৈরি করা হয়েছে");
+
+      // *** নতুন স্টক কমানোর লজিক শুরু ***
+      for (const item of lines) {
+        const productRef = doc(db, "products", item.productId);
+        const qtyToDeduct = item.totalBoxes;
+
+        if (qtyToDeduct > 0) {
+          try {
+            await runTransaction(db, async (transaction) => {
+              const productDoc = await transaction.get(productRef);
+              if (!productDoc.exists()) {
+                // If product doesn't exist, we can't deduct stock, but we shouldn't fail the whole memo creation
+                console.warn(`Product ${item.productId} not found for stock deduction.`);
+                return;
+              }
+
+              const currentData = productDoc.data();
+              const boxInCarton = Number(currentData.boxInCarton ?? 1) || 1;
+              const currentTotalBoxes = Number(currentData.inventory?.totalBoxes ?? 0);
+
+              const newTotalBoxes = Math.max(0, currentTotalBoxes - qtyToDeduct);
+              const newCartons = Math.floor(newTotalBoxes / boxInCarton);
+              const newBoxes = newTotalBoxes % boxInCarton;
+
+              transaction.update(productRef, {
+                "inventory.totalBoxes": newTotalBoxes,
+                "inventory.cartons": newCartons,
+                "inventory.boxes": newBoxes,
+              });
+            });
+          } catch (transactionError) {
+            console.error(`Stock deduction failed for product ${item.productId}:`, transactionError);
+            // Optionally, you might want to delete the memo here if stock deduction is critical
+            // await deleteDoc(memoRef);
+            // throw new Error("Stock deduction failed, memo creation aborted.");
+          }
+        }
+      }
+      // *** নতুন স্টক কমানোর লজিক শেষ ***
+
       await updateCartItems([]);
       setLocalEditing({});
       setShopName("");
@@ -372,8 +414,8 @@ export default function CartAndMemo() {
               const appliedDiscount =
                 Number(
                   localObj.discount !== undefined
-                    ? Number(localObj.discount || 0)
-                    : Number(item.discount || 0)
+                    ? localObj.discount
+                    : item.discount ?? 0
                 ) || 0;
 
               const lineBefore = unitPrice * totalBoxesLocal;
@@ -491,5 +533,3 @@ export default function CartAndMemo() {
     </section>
   );
 }
-
-

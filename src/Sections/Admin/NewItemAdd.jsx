@@ -132,7 +132,7 @@ export default function NewItemAdd() {
 
   return (
     <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="🧱 নতুন পণ্য" />
+      <Heading text="নতুন পণ্য" />
       <form onSubmit={handleSubmit}>
         <div className="flex flex-col gap-2 p-3">
           <InputField
@@ -209,3 +209,4 @@ export default function NewItemAdd() {
     </section>
   );
 }
+

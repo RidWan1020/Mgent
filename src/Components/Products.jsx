@@ -245,74 +245,79 @@ export default function Products({ product }) {
         }
 
         case FIELDS.BOXES: {
-          const v = parseInt(
+          // Allow negative values for stock deduction
+          const v = Number(
             String(editValue || "")
               .replace(/,/g, "")
-              .trim() || "0",
-            10
+              .trim() || "0"
           );
-          if (!Number.isFinite(v) || v < 0) {
-            notifyError("বক্সের পরিমাণ শূণ্য অপেক্ষা বেশী হতে হবে");
+          
+          if (!Number.isFinite(v)) {
+            notifyError("বক্সের পরিমাণ একটি বৈধ সংখ্যা হতে হবে");
             return;
           }
 
-          const { submittedCartons, submittedBoxes: _ } = getSubmitted();
-          const newSubmittedCartons = submittedCartons ?? 0;
-          const newSubmittedBoxes = v;
           const boxInCarton = getBoxInCarton();
-          const total = newSubmittedCartons * boxInCarton + newSubmittedBoxes;
-          const normalizedCartons = Math.floor(total / boxInCarton);
-          const normalizedBoxes = total % boxInCarton;
+          const currentTotalBoxes =
+            typeof product.stock === "number"
+              ? product.stock
+              : product.inventory?.totalBoxes ?? 0;
+          
+          // New total stock = current stock + input value (if input is negative, it will deduct)
+          const newTotalBoxes = Math.max(0, currentTotalBoxes + v);
+          
+          const normalizedCartons = Math.floor(newTotalBoxes / boxInCarton);
+          const normalizedBoxes = newTotalBoxes % boxInCarton;
 
           updateData = {
-            stock: total,
+            stock: newTotalBoxes,
             boxInCarton: boxInCarton,
             inventory: {
-              submittedCartons: newSubmittedCartons,
-              submittedBoxes: newSubmittedBoxes,
+              // Note: We are not updating submittedCartons/Boxes here, as this is an adjustment
               cartons: normalizedCartons,
               boxes: normalizedBoxes,
-              totalBoxes: total,
+              totalBoxes: newTotalBoxes,
             },
           };
           break;
         }
 
         case FIELDS.CARTONS: {
-          const v = parseInt(
+          // Allow negative values for stock deduction
+          const v = Number(
             String(editValue || "")
               .replace(/,/g, "")
-              .trim() || "0",
-            10
+              .trim() || "0"
           );
-          if (!Number.isFinite(v) || v < 0) {
-            notifyError("কার্টনের পরিমাণ শূণ্য বা তার থেকে বেশী হতে হবে");
+          
+          if (!Number.isFinite(v)) {
+            notifyError("কার্টনের পরিমাণ একটি বৈধ সংখ্যা হতে হবে");
             return;
           }
 
           const boxInCarton = getBoxInCarton();
-          const currTotalBoxes =
+          const currentTotalBoxes =
             typeof product.stock === "number"
               ? product.stock
               : product.inventory?.totalBoxes ?? 0;
-          const currentDisplayBoxes = currTotalBoxes % boxInCarton;
-
-          const newSubmittedCartons = v;
-          const newSubmittedBoxes = currentDisplayBoxes;
-
-          const total = newSubmittedCartons * boxInCarton + newSubmittedBoxes;
-          const normalizedCartons = Math.floor(total / boxInCarton);
-          const normalizedBoxes = total % boxInCarton;
+          
+          // Convert carton input to total boxes to be added/deducted
+          const qtyToChange = v * boxInCarton;
+          
+          // New total stock = current stock + input value (if input is negative, it will deduct)
+          const newTotalBoxes = Math.max(0, currentTotalBoxes + qtyToChange);
+          
+          const normalizedCartons = Math.floor(newTotalBoxes / boxInCarton);
+          const normalizedBoxes = newTotalBoxes % boxInCarton;
 
           updateData = {
-            stock: total,
+            stock: newTotalBoxes,
             boxInCarton: boxInCarton,
             inventory: {
-              submittedCartons: newSubmittedCartons,
-              submittedBoxes: newSubmittedBoxes,
+              // Note: We are not updating submittedCartons/Boxes here, as this is an adjustment
               cartons: normalizedCartons,
               boxes: normalizedBoxes,
-              totalBoxes: total,
+              totalBoxes: newTotalBoxes,
             },
           };
           break;
@@ -483,7 +488,6 @@ export default function Products({ product }) {
                     {selectedField === FIELDS.BOXES && (
                       <NumberInputField
                         id="newBox"
-                        min={0}
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                       />
@@ -491,7 +495,6 @@ export default function Products({ product }) {
                     {selectedField === FIELDS.CARTONS && (
                       <NumberInputField
                         id="newCartoon"
-                        min={0}
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
                       />

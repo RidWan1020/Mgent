@@ -350,8 +350,44 @@ export default function MemoCatalog() {
 
   const handleStatusChange = async (memoId, newStatus) => {
     setStatusUpdating((s) => ({ ...s, [memoId]: true }));
+
     try {
-      await updateDoc(doc(db, "memos", memoId), { status: newStatus });
+      const memoRef = doc(db, "memos", memoId);
+      const memoSnap = await getDoc(memoRef);
+
+      if (!memoSnap.exists()) {
+        console.error("Memo not found");
+        return;
+      }
+
+      const memo = memoSnap.data();
+      const oldStatus = memo.status || "pending";
+
+      if (newStatus === "accepted" && oldStatus !== "accepted") {
+        if (Array.isArray(memo.items)) {
+          for (const item of memo.items) {
+            const productId =
+              item.productId || item.id || item.sku || item.code || null;
+
+            if (!productId) continue;
+
+            const totalBoxes = Number(item.totalBoxes ?? item.qty ?? 0);
+
+            const productRef = doc(db, "products", productId);
+            const productSnap = await getDoc(productRef);
+
+            if (productSnap.exists()) {
+              const productData = productSnap.data();
+              const currentStock = Number(productData.stock ?? 0);
+              const newStock = Math.max(currentStock - totalBoxes, 0);
+
+              await updateDoc(productRef, { stock: newStock });
+            }
+          }
+        }
+      }
+
+      await updateDoc(memoRef, { status: newStatus });
     } catch (err) {
       console.error("Failed to update memo status:", err);
     } finally {
@@ -418,7 +454,6 @@ export default function MemoCatalog() {
                 >
                   <div className="mb-3">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="text-xs text-[#94a3b8]">Status:</div>
                       <div
                         className={`text-xs font-semibold px-2 py-0.5 rounded ${
                           status === "accepted"

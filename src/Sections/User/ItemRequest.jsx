@@ -58,10 +58,10 @@ export default function ItemRequest() {
   };
 
   return (
-    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="📨 আইটেম রিকোয়েস্ট" />
+    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-4">
+      <Heading text="আইটেম রিকোয়েস্ট" />
       <form id="reqForm" onSubmit={handleSubmit}>
-        <div className="flex flex-col gap-2 p-3">
+        <div className="flex flex-col gap-4 p-3">
           <Inputfield
             label="পণ্যের নাম"
             id="reqTitle"

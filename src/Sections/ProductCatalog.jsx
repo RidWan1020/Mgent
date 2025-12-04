@@ -27,8 +27,8 @@ export default function ProductsCatalog() {
   );
 
   return (
-    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] shadow-[0_6px_28px_rgba(0,0,0,.25)] rounded-2xl">
-      <Header text="🧱 পণ্য তালিকা" />
+    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] shadow-[0_6px_28px_rgba(0,0,0,.25)] rounded-2xl p-4">
+      <Header text="পণ্য তালিকা" />
       <div className="p-2.5">
         <div className="md:items-center p-2 gap-3">
           <InputField

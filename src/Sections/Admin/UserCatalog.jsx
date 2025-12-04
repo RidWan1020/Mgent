@@ -12,6 +12,7 @@ import { db } from "@Configs/firebase";
 import Heading from "@Components/Heading";
 import PrimaryButton from "@Components/PrimaryButton";
 import SecondaryButton from "@Components/SecondaryButton";
+import AccordionItem from "@Components/AccordionItem";
 import { useNotification } from "@Context/NotificationContext";
 import { useAuth } from "@Context/AuthContext";
 
@@ -145,69 +146,86 @@ export default function UserCatalog() {
     }
   };
 
-  return (
-    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-6">
-      <Heading text="👥 ব্যবহারকারীর তালিকা" />
+  const toggleAccordion = () => {
+    setOpenId((prev) => (prev === "users" ? null : "users"));
+  };
 
-      <div className="overflow-x-auto mt-4">
-        <table className="w-full text-left text-[#e6eef6] border-collapse">
-          <thead className="bg-[#1f2937] text-[#20c4dd]">
-            <tr>
-              <th className="p-3 border-b border-[#2d3c56] text-center">নাম</th>
-              <th className="p-3 border-b border-[#2d3c56] text-center hidden lg:table-cell">
-                ফোন
-              </th>
-              <th className="p-3 border-b border-[#2d3c56] text-center hidden lg:table-cell">
-                রোল
-              </th>
-              <th className="p-3 border-b border-[#2d3c56] text-center hidden lg:table-cell">
-                সময়
-              </th>
-              <th className="p-3 border-b border-[#2d3c56] text-center">
-                অ্যাকশন
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.length === 0 ? (
+  return (
+    <AccordionItem
+      id="users"
+      title="ব্যবহারকারীর তালিকা"
+      isOpen={openId === "users"}
+      onToggle={toggleAccordion}
+    >
+      <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-4">
+
+        <div className="overflow-x-auto mt-4">
+          <table className="w-full text-left text-[#e6eef6] border-collapse">
+            <thead className="bg-[#1f2937] text-[#20c4dd]">
               <tr>
-                <td colSpan="5" className="text-center text-[#94a3b8] p-4">
-                  কোনো ব্যবহারকারী পাওয়া যায়নি।
-                </td>
+                <th className="p-3 border-b border-[#2d3c56] text-center">
+                  নাম
+                </th>
+                <th className="p-3 border-b border-[#2d3c56] text-center hidden lg:table-cell">
+                  ফোন
+                </th>
+                <th className="p-3 border-b border-[#2d3c56] text-center hidden lg:table-cell">
+                  রোল
+                </th>
+                <th className="p-3 border-b border-[#2d3c56] text-center hidden lg:table-cell">
+                  সময়
+                </th>
+                <th className="p-3 border-b border-[#2d3c56] text-center">
+                  অ্যাকশন
+                </th>
               </tr>
-            ) : (
-              users.map((u) => (
-                <tr key={u.id} className="hover:bg-[#111a33] transition-colors">
-                  <td className="p-3 border-b border-[#1f2937] text-center">
-                    {u.name}
-                  </td>
-                  <td className="p-3 border-b border-[#1f2937] text-center hidden lg:table-cell">
-                    {u.phone}
-                  </td>
-                  <td className="p-3 border-b border-[#1f2937] capitalize text-center hidden lg:table-cell">
-                    {u.role}
-                  </td>
-                  <td className="p-3 border-b border-[#1f2937] text-center hidden lg:table-cell">
-                    {formatDateBn(u.createdAt)}
-                  </td>
-                  <td className="p-3 border-b border-[#1f2937] text-center">
-                    <div className="flex gap-2 justify-center">
-                      <PrimaryButton
-                        text={u.role === "admin" ? "ইউজার বানান" : "এডমিন বানান"}
-                        onClick={() => handleToggleRole(u.id, u.role)}
-                      />
-                      <SecondaryButton
-                        text="ডিলিট"
-                        onClick={() => handleDelete(u.id, u.name)}
-                      />
-                    </div>
+            </thead>
+            <tbody>
+              {users.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="text-center text-[#94a3b8] p-4">
+                    কোনো ব্যবহারকারী পাওয়া যায়নি।
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
+              ) : (
+                users.map((u) => (
+                  <tr
+                    key={u.id}
+                    className="hover:bg-[#111a33] transition-colors"
+                  >
+                    <td className="p-3 border-b border-[#1f2937] text-center">
+                      {u.name}
+                    </td>
+                    <td className="p-3 border-b border-[#1f2937] text-center hidden lg:table-cell">
+                      {u.phone}
+                    </td>
+                    <td className="p-3 border-b border-[#1f2937] capitalize text-center hidden lg:table-cell">
+                      {u.role}
+                    </td>
+                    <td className="p-3 border-b border-[#1f2937] text-center hidden lg:table-cell">
+                      {formatDateBn(u.createdAt)}
+                    </td>
+                    <td className="p-3 border-b border-[#1f2937] text-center">
+                      <div className="flex gap-2 justify-center">
+                        <PrimaryButton
+                          text={
+                            u.role === "admin" ? "ইউজার বানান" : "এডমিন বানান"
+                          }
+                          onClick={() => handleToggleRole(u.id, u.role)}
+                        />
+                        <SecondaryButton
+                          text="ডিলিট"
+                          onClick={() => handleDelete(u.id, u.name)}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </AccordionItem>
   );
 }

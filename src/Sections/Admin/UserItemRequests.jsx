@@ -115,8 +115,8 @@ export default function UserItemRequests() {
   };
 
   return (
-    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="📨 ব্যবহারকারী থেকে পণ্যের অনুরোধ" />
+    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-4">
+      <Heading text="ব্যবহারকারী থেকে পণ্যের অনুরোধ" />
       <div className="px-3 py-3">
         <div className="flex md:items-center gap-3 px-3 py-3">
           <SelectInput

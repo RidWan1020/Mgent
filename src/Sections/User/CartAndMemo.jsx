@@ -321,7 +321,6 @@ export default function CartAndMemo() {
             await runTransaction(db, async (transaction) => {
               const productDoc = await transaction.get(productRef);
               if (!productDoc.exists()) {
-                // If product doesn't exist, we can't deduct stock, but we shouldn't fail the whole memo creation
                 console.warn(`Product ${item.productId} not found for stock deduction.`);
                 return;
               }
@@ -342,13 +341,9 @@ export default function CartAndMemo() {
             });
           } catch (transactionError) {
             console.error(`Stock deduction failed for product ${item.productId}:`, transactionError);
-            // Optionally, you might want to delete the memo here if stock deduction is critical
-            // await deleteDoc(memoRef);
-            // throw new Error("Stock deduction failed, memo creation aborted.");
           }
         }
       }
-      // *** নতুন স্টক কমানোর লজিক শেষ ***
 
       await updateCartItems([]);
       setLocalEditing({});
@@ -361,8 +356,8 @@ export default function CartAndMemo() {
   };
 
   return (
-    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="🧾 আপনার কার্ট" />
+    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-4">
+      <Heading text="আপনার কার্ট" />
       <div className="px-2.5 py-3">
         <div className="flex p-3 gap-3">
           <InputField

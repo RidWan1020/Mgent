@@ -364,15 +364,15 @@ export default function MemoCatalog() {
   };
 
   return (
-    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="📚 ক্যাশ মেমোর তালিকা" />
+    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-4">
+      <Heading text="ক্যাশ মেমোর তালিকা" />
       <div className="px-2.5 py-3">
         <div className="flex md:items-center p-3 gap-3">
           <SelectInput
             id="filterBy"
             placeholder="ফিল্টার"
             value={filterBy}
-            options={["সবকিছু", "ব্যবহারকারী", "পণ্য"]}
+            options={["সব", "ব্যবহারকারী", "পণ্য"]}
             onChange={(e) => setFilterBy(e.target.value)}
           />
           <InputField

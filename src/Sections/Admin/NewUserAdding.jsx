@@ -80,14 +80,14 @@ export default function NewUserAdding() {
   };
 
   return (
-    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="👥 নতুন ব্যবহারকারী" />
+    <section className="bg-[rgb(11,16,36)] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-4">
+      <Heading text="নতুন ব্যবহারকারী" />
       <form ref={formRef} onSubmit={handleSubmit}>
-        <div className="flex flex-col gap-2 p-3">
-          <div className="flex flex-row gap-2.5">
+        <div className="flex flex-col gap-4 p-3">
+          <div className="flex flex-row gap-3">
             {" "}
             <InputField
-              label="ব্যবহারকারীর নাম"
+              label="নাম"
               id="newUserName"
               placeholder="যেমন: Ridwan"
             />{" "}
@@ -95,14 +95,14 @@ export default function NewUserAdding() {
               {" "}
               <SelectInput
                 id="newUserRole"
-                label="ব্যবহারকারীর রোল"
+                label="রোল"
                 placeholder="ইউজার রোল"
                 options={["user", "admin"]}
               />{" "}
             </div>{" "}
           </div>
           <InputField
-            label="ফোন নাম্বার (১১ সংখ্যার হতে হবে)"
+            label="ফোন নাম্বার"
             id="newUserPhone"
             placeholder="যেমন: 01234567890"
           />

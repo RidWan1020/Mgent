@@ -97,8 +97,8 @@ export default function UserItemPricing() {
   };
 
   return (
-    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)]">
-      <Heading text="👥 ব্যবহারকারীভিত্তিক মূল্য" />
+    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-4">
+      <Heading text="ব্যবহারকারীভিত্তিক মূল্য" />
       <form onSubmit={handleApply}>
         <div className="flex flex-col gap-4 p-3">
           <SelectInput

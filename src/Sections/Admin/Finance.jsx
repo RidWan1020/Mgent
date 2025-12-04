@@ -101,9 +101,8 @@ export default function Finance() {
   const profit = salesTotal - importTotal;
 
   return (
-    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-6">
+    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-4">
       <Heading text="মোট হিসাব" />
-
       <div className="overflow-x-auto mt-4">
         <table className="w-full text-left text-[#e6eef6] border-collapse">
           <thead className="bg-[#1f2937] text-[#20c4dd]">

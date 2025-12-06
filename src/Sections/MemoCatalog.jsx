@@ -138,7 +138,7 @@ export default function MemoCatalog() {
     if (!q) return true;
     const items = Array.isArray(memo.items) ? memo.items : [];
     return items.some((it) => {
-      const fields = [it.name, it.productId, it.sku, it.code, it.variant];
+      const fields = [it.name, it.productId, it.code, it.variant];
       return fields.some((f) =>
         String(f || "")
           .toLowerCase()
@@ -222,7 +222,6 @@ export default function MemoCatalog() {
         (it) => ({
           productId: it.productId ?? it.id ?? null,
           name: it.name ?? "",
-          sku: it.sku ?? it.code ?? null,
           boxInCarton: Number(it.boxInCarton ?? it.cartoonAmount ?? 1),
           totalBoxes: Number(it.totalBoxes ?? it.qty ?? 0),
           unitPrice: Number(it.unitPrice ?? it.price ?? 0),
@@ -397,13 +396,7 @@ export default function MemoCatalog() {
       if (newStatus === "accepted" && oldStatus !== "accepted") {
         if (Array.isArray(memo.items)) {
           for (const item of memo.items) {
-            const productId =
-              item.productId || item.id || item.sku || item.code || null;
-
-            if (!productId) continue;
-
             const totalBoxes = Number(item.totalBoxes ?? item.qty ?? 0);
-
             const productRef = doc(db, "products", productId);
             const productSnap = await getDoc(productRef);
 

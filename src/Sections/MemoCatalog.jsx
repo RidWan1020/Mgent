@@ -237,6 +237,7 @@ export default function MemoCatalog() {
           createdFromMemo: memo.id,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
+          ...(memo.status === "accepted" ? { isReturn: true } : {}),
         },
         { merge: true }
       );

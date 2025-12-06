@@ -27,16 +27,25 @@ const styles = StyleSheet.create({
     padding: "30px 50px",
   },
   header: {
-    flexDirection: "row",
+    flexDirection: "column",
     justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 20,
   },
+  shopDetails: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 5,
+  },
   title: {
-    fontSize: 24,
+    fontSize: 42,
   },
   textBold: {
     fontFamily: "Bornomala",
     fontWeight: "bold",
+  },
+  date: {
+    marginTop: -5,
   },
   spaceY: {
     display: "flex",
@@ -71,19 +80,21 @@ const MemoPDF = ({ memo, calcMemoTotals, parseWhen }) => {
         <View style={styles.header}>
           <View>
             <Text style={[styles.title, styles.textBold]}>ক্যাশ মেমো </Text>
-            <Text>তারিখ: {parseWhen(memo.createdAt)}</Text>
-          </View>
-          <View style={styles.spaceY}>
-            <Text style={styles.textBold}>মেসার্স রিদওয়ার সরকার ট্রেডার্স</Text>
-            <Text>ঈদগাহ কাঁচা রাস্তার মাথা</Text>
-            <Text>চট্টগ্রাম, বাংলাদেশ</Text>
+            <Text style={styles.date}>তারিখ: {parseWhen(memo.createdAt)}</Text>
           </View>
         </View>
 
-        <View style={styles.spaceY}>
-          <Text style={[styles.billTo, styles.textBold]}>ক্রেতার তথ্য</Text>
-          <Text>দোকানের নাম: {memo.shopName}</Text>
-          <Text>দোকানের ঠিকানা: {memo.shopAddress}</Text>
+        <View style={styles.shopDetails}>
+          <View style={styles.spaceY}>
+            <Text style={[styles.billTo, styles.textBold]}>প্রতিষ্ঠানের তথ্য</Text>
+            <Text>মেসার্স রিদওয়ার সরকার ট্রেডার্স</Text>
+            <Text>ঈদগাহ কাঁচা রাস্তার মাথা</Text>
+          </View>
+          <View style={styles.spaceY}>
+            <Text style={[styles.billTo, styles.textBold]}>ক্রেতার তথ্য</Text>
+            <Text>দোকানের নাম: {memo.shopName}</Text>
+            <Text>দোকানের ঠিকানা: {memo.shopAddress}</Text>
+          </View>
         </View>
 
         <Table style={styles.table}>
@@ -135,7 +146,7 @@ const MemoPDF = ({ memo, calcMemoTotals, parseWhen }) => {
           }}
         >
           <Text style={styles.textBold}>
-            মোট: {Number(fmt(totals.total)).toLocaleString("bn-BD")}
+            সর্বমোট: {Number(fmt(totals.total)).toLocaleString("bn-BD")} টাকা
           </Text>
         </View>
       </Page>

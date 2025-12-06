@@ -10,6 +10,8 @@ import {
   getDoc,
   setDoc,
   serverTimestamp,
+  writeBatch,
+  increment,
 } from "firebase/firestore";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { db } from "@Configs/firebase";
@@ -188,8 +190,9 @@ export default function MemoCatalog() {
   };
 
   const handleEditMemo = async (memo) => {
+    // 1. Basic Validation
     if (!memo?.id) {
-      notifyError("ইডিট করা যাচ্ছে না — মেমো আইডি পাওয়া যায়নি");
+      notifyError("ইডিট করা যাচ্ছে না — মেমো আইডি পাওয়া যায়নি");
       return;
     }
 
@@ -202,6 +205,7 @@ export default function MemoCatalog() {
       const cartRef = doc(db, "carts", user.uid);
       const cartSnap = await getDoc(cartRef);
 
+      // 2. Check if cart is empty
       if (cartSnap.exists()) {
         const cartData = cartSnap.data() || {};
         const existingItems = Array.isArray(cartData.items)
@@ -213,6 +217,7 @@ export default function MemoCatalog() {
         }
       }
 
+      // 3. Prepare items for cart
       const itemsForCart = (Array.isArray(memo.items) ? memo.items : []).map(
         (it) => ({
           productId: it.productId ?? it.id ?? null,
@@ -230,27 +235,52 @@ export default function MemoCatalog() {
         return;
       }
 
-      await setDoc(
+      // --- START OF NEW LOGIC ---
+
+      // Initialize a Write Batch
+      const batch = writeBatch(db);
+
+      // A. Loop through items to return stock
+      itemsForCart.forEach((item) => {
+        if (item.productId) {
+          const productRef = doc(db, "products", item.productId);
+
+          // We use 'increment' to safely add the stock back
+          // Change 'stock' to whatever field name you use in your DB (e.g. 'quantity', 'currentStock')
+          batch.update(productRef, {
+            stock: increment(item.totalBoxes),
+          });
+        }
+      });
+
+      // B. Add items to Cart
+      batch.set(
         cartRef,
         {
           items: itemsForCart,
           createdFromMemo: memo.id,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-          ...(memo.status === "accepted" ? { isReturn: true } : {}),
         },
         { merge: true }
       );
 
-      await deleteDoc(doc(db, "memos", memo.id));
+      // C. Delete the Memo
+      const memoRef = doc(db, "memos", memo.id);
+      batch.delete(memoRef);
 
-      notifySuccess("মেমোটি কার্টে পাঠানো হয়েছে — এখন আপনি এডিট করতে পারবেন");
+      // D. Commit all changes at once
+      await batch.commit();
+
+      // --- END OF NEW LOGIC ---
+
+      notifySuccess("মেমোটি কার্টে পাঠানো হয়েছে এবং স্টক ফেরত দেওয়া হয়েছে");
     } catch (err) {
       console.error("handleEditMemo error:", err);
       if (err?.code === "permission-denied") {
         notifyError("আপনার কাছে অনুুমতি নেই (permission-denied)");
       } else {
-        notifyError("মেমো কার্টে পাঠানো যায়নি — কনসোলে ত্রুটি দেখুন");
+        notifyError("মেমো কার্টে পাঠানো যায়নি — কনসোলে ত্রুটি দেখুন");
       }
     }
   };

@@ -2,7 +2,7 @@ import Header from "@Sections/Header";
 import Footer from "@Sections/Footer";
 import Logo from "@assets/logo.png";
 import ProductsCatalog from "@Sections/ProductCatalog";
-import ItemRequest from "@Sections/User/ItemRequest";
+import ItemRequest from "@Sections/ItemRequest";
 import MemoCatalog from "@Sections/MemoCatalog";
 
 export default function User() {

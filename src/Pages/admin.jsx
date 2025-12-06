@@ -1,14 +1,14 @@
 import Header from "@Sections/Header";
 import Footer from "@Sections/Footer";
 import Logo from "@assets/adminlogo.png";
-import NewItemAdd from "@Sections/Admin/NewItemAdd";
+import NewItemAdd from "@Sections/NewItemAdd";
 import ProductsCatalog from "@Sections/ProductCatalog";
 import MemoCatalog from "@Sections/MemoCatalog";
-import NewUserAdding from "@Sections/Admin/NewUserAdding";
-import UserItemRequests from "@Sections/Admin/UserItemRequests";
-import UserItemPricing from "@Sections/Admin/UserItemPricing";
-import UserCatalog from "@Sections/Admin/UserCatalog";
-import Finance from "@Sections/Admin/Finance";
+import NewUserAdding from "@Sections/NewUserAdding";
+import UserItemRequests from "@Sections/UserItemRequests";
+import UserItemPricing from "@Sections/UserItemPricing";
+import UserCatalog from "@Sections/UserCatalog";
+import Finance from "@Sections/Finance";
 
 export default function Admin() {
   return (

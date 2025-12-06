@@ -1,0 +1,193 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  collection,
+  deleteDoc,
+  doc,
+  query,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "@Configs/firebase";
+
+import Heading from "@Components/Heading";
+import SecondaryButton from "@Components/SecondaryButton";
+import AccordionItem from "@Components/AccordionItem";
+import InputField from "@Components/InputField";
+import SelectInput from "@Components/SelectInput";
+import { useNotification } from "@Context/NotificationContext";
+
+export default function UserItemRequests() {
+  const { notifySuccess, notifyError } = useNotification();
+
+  const [requests, setRequests] = useState([]);
+  const [openId, setOpenId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [filterBy, setFilterBy] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const q = query(
+      collection(db, "itemRequest"),
+      orderBy("createdAt", "desc")
+    );
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setRequests(data);
+        setLoading(false);
+      },
+      (err) => {
+        console.error("itemRequest onSnapshot error:", err);
+        notifyError("লোড করতে সমস্যা হয়েছে। পেইজ রিফ্রেস করুন");
+        setLoading(false);
+      }
+    );
+
+    return () => unsub();
+  }, [notifyError]);
+
+  const formatWhen = (ts) => {
+    if (!ts) return "";
+    if (typeof ts === "number") return new Date(ts).toLocaleString();
+    if (ts?.toDate) return ts.toDate().toLocaleString();
+    if (ts?.seconds) return new Date(ts.seconds * 1000).toLocaleString();
+    return String(ts);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("আপনি কি নিশ্চিতভাবে ডিলিট করতে চান?"))
+      return;
+
+    const prev = requests;
+    setRequests((prevList) => prevList.filter((r) => r.id !== id));
+
+    try {
+      await deleteDoc(doc(db, "itemRequest", id));
+      notifySuccess("সফলভাবে ডিলিট করা হয়েছে");
+    } catch (err) {
+      console.error("Error deleting request:", err);
+      notifyError("ডিলিট করতে সমস্যা হয়েছে। পুনরায় চেষ্টা করুন");
+      setRequests(prev);
+    }
+  };
+
+  const filteredRequests = useMemo(() => {
+    if (
+      !searchQuery ||
+      searchQuery.trim() === "" ||
+      (filterBy === "All" && searchQuery.trim() === "")
+    ) {
+      return requests;
+    }
+
+    const q = searchQuery.trim().toLowerCase();
+
+    return requests.filter((r) => {
+      if (filterBy === "All") {
+        return (
+          String(r.requestedBy || "")
+            .toLowerCase()
+            .includes(q) ||
+          String(r.name || "")
+            .toLowerCase()
+            .includes(q) ||
+          String(r.explanation || "")
+            .toLowerCase()
+            .includes(q)
+        );
+      } else if (filterBy === "User") {
+        return String(r.requestedBy || "")
+          .toLowerCase()
+          .includes(q);
+      } else if (filterBy === "Item") {
+        return String(r.name || "")
+          .toLowerCase()
+          .includes(q);
+      }
+      return true;
+    });
+  }, [requests, filterBy, searchQuery]);
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setFilterBy("");
+  };
+
+  return (
+    <section className="bg-[#0b1024] border-2 border-solid border-[#1f2937] rounded-2xl shadow-[0_6px_28px_rgba(0,0,0,.25)] p-4">
+      <Heading text="ব্যবহারকারী থেকে পণ্যের অনুরোধ" />
+      <div className="px-3 py-3">
+        <div className="flex md:items-center gap-3 px-3 py-3">
+          <SelectInput
+            id="filterBy"
+            placeholder="ফিল্টার"
+            value={filterBy}
+            options={["সবকিছু", "ব্যবহারকারী", "পণ্য"]}
+            onChange={(e) => setFilterBy(e.target.value)}
+          />
+          <InputField
+            id="searchRequests"
+            placeholder={
+              filterBy === "User"
+                ? "ব্যবহারকারী খুঁজুন"
+                : filterBy === "Item"
+                ? "পণ্য খুঁজুন"
+                : "খুঁজুন"
+            }
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          <SecondaryButton text="ক্লিয়ার" onClick={clearSearch} />
+        </div>
+
+        {loading && (
+          <div className="text-sm text-[#94a3b8] px-3 py-2">লোড হচ্ছে...</div>
+        )}
+
+        {!loading && filteredRequests.length === 0 && (
+          <div className="text-sm text-[#94a3b8] px-3 py-4">
+            কোনো পণ্যের অনুরোধ নেই
+          </div>
+        )}
+
+        <div className="space-y-3 max-h-80 px-3 overflow-y-auto">
+          {filteredRequests.map((req) => {
+            const when = formatWhen(req.createdAt);
+            const title = req.name || "—";
+            const subtitle = `${req.requestedBy || "Guest"} • ${when}`;
+            const icon = String(req.requestedBy || "G")
+              .charAt(0)
+              .toUpperCase();
+
+            return (
+              <AccordionItem
+                key={req.id}
+                id={`request-${req.id}`}
+                title={title}
+                subtitle={subtitle}
+                icon={icon}
+                isOpen={openId === req.id}
+                onToggle={() => setOpenId(openId === req.id ? null : req.id)}
+              >
+                <div className="mb-3 text-sm text-[#d7eaf6]">
+                  <strong>বিবরণ:</strong>
+                  <div className="mt-1 text-[#cfeefb]">
+                    {req.explanation || "—"}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <SecondaryButton
+                    text="Delete"
+                    onClick={() => handleDelete(req.id)}
+                  />
+                </div>
+              </AccordionItem>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}

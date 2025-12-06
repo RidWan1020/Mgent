@@ -74,7 +74,9 @@ export default function UserDailySummary() {
       <Heading text="আজকের পণ্যের তালিকা" />
 
       {summary.length === 0 ? (
-        <p className="text-gray-400 text-sm">আজকে এখনো কোন পন্য কিনেনি।</p>
+        <p className="text-gray-400 text-sm px-2 py-4">
+          আজকে এখনো কোন পন্য কিনেনি।
+        </p>
       ) : (
         <div className="overflow-x-auto mt-4">
           <table className="w-full text-left text-[#e6eef6] border-collapse">
@@ -101,13 +103,13 @@ export default function UserDailySummary() {
                     {p.name}
                   </td>
                   <td className="p-3 border-b border-[#1f2937] text-center">
-                    {(p.boxes).toLocaleString("bn-BD")}
+                    {p.boxes.toLocaleString("bn-BD")}
                   </td>
                   <td className="p-3 border-b border-[#1f2937] text-center">
-                    {(p.cartons).toLocaleString("bn-BD")}
+                    {p.cartons.toLocaleString("bn-BD")}
                   </td>
                   <td className="p-3 border-b border-[#1f2937] text-center">
-                    {(p.total).toLocaleString("bn-BD")} টাকা
+                    {p.total.toLocaleString("bn-BD")} টাকা
                   </td>
                 </tr>
               ))}
@@ -116,8 +118,13 @@ export default function UserDailySummary() {
         </div>
       )}
 
-      <div className="mt-4 text-right">
-        <p className="text-lg font-bold">মোট: {totalAmount.toLocaleString("bn-BD")} টাকা</p>
+      <div className="flex items-center justify-end gap-2 mt-2">
+        <div className="mt-2 px-2 py-2 rounded bg-[#061227] border border-[#1f2937] text-sm text-[#93c5fd]">
+          মোট:{" "}
+          <span className="font-semibold text-green-300">
+            {totalAmount.toLocaleString("bn-BD")} টাকা
+          </span>
+        </div>
       </div>
     </section>
   );

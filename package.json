@@ -13,6 +13,7 @@
     "@ag-media/react-pdf-table": "^2.0.3",
     "@react-pdf/renderer": "^4.3.1",
     "@tailwindcss/vite": "^4.1.13",
+    "dayjs": "^1.11.19",
     "firebase": "^12.2.1",
     "framer-motion": "^12.23.16",
     "jspdf": "^3.0.3",

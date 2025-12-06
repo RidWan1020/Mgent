@@ -10,7 +10,7 @@ export default function UserSummary() {
       <Header Logo={Logo} />
       <main className="w-full flex flex-col gap-4 p-4">
         <UserFinance />
-        {/* <UserDailySummary /> */}
+        <UserDailySummary />
       </main>
       <Footer />
     </div>

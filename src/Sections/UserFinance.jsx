@@ -78,12 +78,12 @@ export default function UserEarnings() {
           <tbody>
             <tr className="hover:bg-[#111a33] transition-colors">
               <td className="p-3 border-b border-[#1f2937] text-center">
-                ৳ {salesTotal.toLocaleString("bn-BD")}
+                {salesTotal.toLocaleString("bn-BD")} টাকা
               </td>
 
               <td className="p-3 border-b border-[#1f2937] text-center">
                 <div className="flex items-center justify-center gap-4">
-                  ৳ {result.toLocaleString("bn-BD")}
+                  {result.toLocaleString("bn-BD")} টাকা
                   <NumberInputField
                     min="1"
                     max="50"

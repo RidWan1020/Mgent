@@ -8,6 +8,7 @@ import Admin from "@Pages/admin";
 import NotFound from "@Pages/NotFound";
 import Login from "@Pages/Login";
 import CartandInvoices from "@Pages/CartandInvoices"
+import UserSummary from "@Pages/UserSummary";
 
 export default function App() {
   const { user, role } = useAuth();
@@ -23,6 +24,10 @@ export default function App() {
           <Route
             path="/cart"
             element={user ? <CartandInvoices /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/user-summary"
+            element={user ? <UserSummary /> : <Navigate to="/login" />}
           />
           <Route
             path="/admin"

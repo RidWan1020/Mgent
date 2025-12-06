@@ -5,7 +5,6 @@ import { signOut } from "firebase/auth";
 import { auth } from "@Configs/firebase";
 import { useAuth } from "@Context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { hover } from "framer-motion";
 
 const DropdownMenu = ({ children, trigger }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -82,6 +81,10 @@ export default function Dropdown() {
 
           <DropdownMenuItem onClick={() => navigate("/cart")}>
             <span>আপনার কার্ট</span>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem onClick={() => navigate("/user-summary")}>
+            <span>আপনার হিসাব-নিকাশ</span>
           </DropdownMenuItem>
         </div>
 

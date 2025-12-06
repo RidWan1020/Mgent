@@ -573,7 +573,7 @@ export default function MemoCatalog() {
 
                       <div className="flex items-center justify-between gap-2 mt-2">
                         <div className="flex items-center justify-between gap-2">
-                          {status === "pending" && (
+                          {(isAdmin || status === "pending") && (
                             <PrimaryButton
                               text="ইডিট"
                               onClick={() => handleEditMemo(memo)}

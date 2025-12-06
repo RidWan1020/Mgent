@@ -280,7 +280,6 @@ export default function Cart() {
       return {
         productId: it.productId,
         name: it.name,
-        image: it.image,
         boxInCarton,
         cartons: Math.floor(totalBoxes / boxInCarton),
         boxes: totalBoxes % boxInCarton,
@@ -421,26 +420,19 @@ export default function Cart() {
               return (
                 <div
                   key={item.productId}
-                  className="flex flex-col sm:flex-row items-start border-2 border-[#1f2937] rounded-xl p-3 bg-[#071225] gap-2"
+                  className="flex flex-col sm:flex-row items-start border-2 border-[#1f2937] rounded-xl p-4.5 bg-[#071225] gap-2"
                 >
-                  <div className="flex items-center justify-center p-2">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-30 h-30 object-cover rounded-lg"
-                    />
-                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col md:flex-row items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <div className="font-normal text-base">{item.name}</div>
-                        <div className="text-xs text-[#94a3b8] mt-1">
+                        <div className="font-normal text-2xl">{item.name}</div>
+                        <div className="text-xs text-[#94a3b8] mt-1">পরিমাণ:{" "}
                           {normCartons.toLocaleString("bn-BD")} কার্টন এবং{" "}
                           {normBoxes.toLocaleString("bn-BD")} বক্স
                         </div>
                       </div>
 
-                      <div className="flex-shrink-0 text-right ml-2">
+                      <div className="flex-shrink-0 md:text-right">
                         <div className="font-semibold text-green-400 whitespace-nowrap">
                           মোট: {Number(fmt(lineTotal)).toLocaleString("bn-BD")}{" "}
                           টাকা
@@ -453,7 +445,7 @@ export default function Cart() {
                     </div>
 
                     <div className="mt-3">
-                      <div className="flex flex-col md:flex-row gap-2">
+                      <div className="flex md:flex-col md:flex-row gap-2">
                         <NumberInputField
                           id={`cartons-${item.productId}`}
                           label="কার্টন"

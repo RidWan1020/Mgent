@@ -445,7 +445,7 @@ export default function Cart() {
                     </div>
 
                     <div className="mt-3">
-                      <div className="flex md:flex-col md:flex-row gap-2">
+                      <div className="flex md:flex-row gap-2">
                         <NumberInputField
                           id={`cartons-${item.productId}`}
                           label="কার্টন"

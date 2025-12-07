@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { db } from "@Configs/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { auth, db } from "@Configs/firebase";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -19,7 +19,8 @@ export default function UserDailySummary() {
 
   async function fetchTodayMemos() {
     const memosRef = collection(db, "memos");
-    const snap = await getDocs(memosRef);
+    const q = query(memosRef, where("userId", "==", auth.currentUser.uid));
+    const snap = await getDocs(q);
 
     const today = dayjs().tz("Asia/Dhaka");
 
